@@ -11,6 +11,8 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Onboarding another engineer:** **[`HANDOFF.md`](HANDOFF.md)**.
 
+**Product planning:** **[`docs/plans/CUSTOMER-INSIGHTS-MVP.md`](docs/plans/CUSTOMER-INSIGHTS-MVP.md)** — Customer Insights standalone MVP + Commerce7 API research from mirrored docs.
+
 ## Commerce7 documentation (offline mirror)
 
 Guide pages from the developer hub are mirrored under **`docs/developer/`** by
