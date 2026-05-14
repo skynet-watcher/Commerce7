@@ -38,14 +38,27 @@ source of truth.
    [`docs/developer/app-platform/authenticate-app.md`](docs/developer/app-platform/authenticate-app.md).
 5. Add or adjust **`apps/web`** for any Admin extension UI.
 
-## GitHub
+## Git & GitHub
 
-Remote **`origin`** points at **[skynet-watcher/Commerce7](https://github.com/skynet-watcher/Commerce7)**. After local commits:
+| Item | Detail |
+|------|--------|
+| **Repository** | [github.com/skynet-watcher/Commerce7](https://github.com/skynet-watcher/Commerce7) |
+| **Default branch** | `main` |
+| **Clone** | `git clone https://github.com/skynet-watcher/Commerce7.git` |
+
+**Day-to-day workflow**
+
+1. **Sync:** `git checkout main && git pull origin main`
+2. **Branch:** `git checkout -b feature/your-topic`
+3. **Commit** with a clear message; keep `.env` and build artifacts out of commits (see `.gitignore`).
+4. **Open a PR** into `main`. CI runs **install → typecheck → test → build** (see `.github/workflows/ci.yml`); fix failures before merge.
+5. **After merge**, other contributors run `git pull` on `main`. Maintainers can push directly when appropriate:
 
 ```bash
 git push origin main
 ```
 
+**Lockfile:** use **`pnpm install`** so `pnpm-lock.yaml` stays consistent; CI uses `pnpm install --frozen-lockfile`.
 ## License
 
 The **scraped documentation** remains property of Commerce7. Any **original code**

@@ -174,10 +174,11 @@ python3 scripts/fetch_docs.py
 
 ## 8. Git workflow (suggestion)
 
-- **Feature branches** off `main`; open PRs for review.
-- **Do not commit** `.env`, `node_modules`, or `apps/web/.next`.
-- After merging, **`git push origin main`** (or your team’s release process).
-
+- **Feature branches** off `main`; open **PRs** for review.
+- **Stay current:** `git checkout main && git pull origin main` before starting new work or branching.
+- **Do not commit** `.env`, `node_modules`, or `apps/web/.next` (see `.gitignore`).
+- **CI:** merging requires a green run — **typecheck**, **test**, **build** on every PR (`.github/workflows/ci.yml`). Use **`pnpm install`** so `pnpm-lock.yaml` stays valid (`--frozen-lockfile` in CI).
+- After merging, **`git push origin main`** is usually already done via the GitHub merge button; otherwise push from your machine per your team’s release process.
 ---
 
 ## 9. Known quirks

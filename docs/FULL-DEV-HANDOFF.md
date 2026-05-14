@@ -143,8 +143,10 @@ Fill tracker table **T1–T11** in that doc with owner, date, Pass/Fail, evidenc
 ## 8. Git & secrets
 
 - **Remote:** `origin` → `https://github.com/skynet-watcher/Commerce7.git`
+- **Default branch:** `main` — `git clone`, then `git pull origin main` before new feature branches.
 - **Do not commit:** `.env`, `node_modules/**`, `apps/web/.next`
-- Workflow: feature branches + PRs; merge to `main`; `git push origin main`
+- **Workflow:** feature branches + PRs into `main`; **CI** (`.github/workflows/ci.yml`) must pass: `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+- Keep **`pnpm-lock.yaml`** in sync: run **`pnpm install`** locally after dependency changes; do not hand-edit the lockfile.
 
 ---
 
