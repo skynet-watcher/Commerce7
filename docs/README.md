@@ -1,5 +1,7 @@
 # Commerce7 developer documentation (local mirror)
 
+For a **build execution plan** (spec → ADC → implementation order), see **[EXECUTION-PLAYBOOK.md](EXECUTION-PLAYBOOK.md)**.
+
 **Canonical site:** [https://developer.commerce7.com](https://developer.commerce7.com/docs/app-development-center)
 
 Pages below are an offline export for quick lookup. Prefer the live site

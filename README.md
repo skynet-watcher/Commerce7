@@ -3,6 +3,8 @@
 Local workspace for building a [Commerce7](https://www.commerce7.com/) app or
 integration using the [App Development Center](https://developer.commerce7.com/docs/app-development-center).
 
+**Execution:** When you know what app you are building, start with **[`docs/EXECUTION-PLAYBOOK.md`](docs/EXECUTION-PLAYBOOK.md)** — phased checklist from spec → ADC → build order → validation.
+
 ## Commerce7 documentation (offline mirror)
 
 Guide pages from the developer hub are mirrored under **`docs/developer/`** by
