@@ -92,4 +92,25 @@ export class HttpCommerce7Client implements Commerce7Client {
       throw new Error(`Commerce7 app-sync failed: HTTP ${res.status} ${text.slice(0, 200)}`);
     }
   }
+
+  async getAccountUser(tenantId: string, authorization: string) {
+    const res = await this.fetchImpl(`${this.baseUrl}/account/user`, {
+      method: "GET",
+      headers: {
+        Authorization: authorization,
+        tenant: tenantId,
+        Accept: "application/json",
+      },
+    });
+    const text = await res.text().catch(() => "");
+    let body: unknown = null;
+    if (text.length > 0) {
+      try {
+        body = JSON.parse(text) as unknown;
+      } catch {
+        body = { message: text.slice(0, 500) };
+      }
+    }
+    return { status: res.status, body };
+  }
 }

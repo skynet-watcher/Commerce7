@@ -31,4 +31,14 @@ describe("MockCommerce7Client", () => {
     expect(client.appSyncCalls).toHaveLength(1);
     expect(client.appSyncCalls[0]!.tenantId).toBe("ten");
   });
+
+  it("getAccountUser records call and maps mock-401", async () => {
+    const client = MockCommerce7Client.twoPageDemo();
+    const ok = await client.getAccountUser("t", "tok");
+    expect(ok.status).toBe(200);
+    expect(client.accountUserCalls).toHaveLength(1);
+
+    const denied = await client.getAccountUser("t", "mock-401");
+    expect(denied.status).toBe(401);
+  });
 });

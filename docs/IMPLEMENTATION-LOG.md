@@ -19,8 +19,9 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 13 | **`POST /lifecycle/install` / `uninstall`** (ADC Install/Uninstall URL) | Done | `lifecycle/*`, `lifecycle-route.test.ts`, `pg-v1` |
 | 14 | **Optional internal Bearer** on sync / reconcile / analytics / **app-sync** | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
 | 15 | **`POST /v1/app-sync`** (push status to Commerce7 Admin on an object) | Done | `c7/app-sync-schema.ts`, `http-client.ts`, `app-sync-route.test.ts`, `v1-chain` |
+| 16 | **`GET /v1/account/user`** (proxy extension `account` / `appToken` JWT) | Done | `account-user-route.test.ts`, `http-client.test.ts`, `v1-chain` |
 
-**Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, extension UI, richer merchant auth. **Note:** Commerce7 **server** API access uses **Basic Auth (app id + secret) + `tenant` header** after install — there is no separate OAuth **code→token** exchange for that path in the public docs; the `oauth_sessions` table remains useful for extension/JWT flows and future ADC features.
+**Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, hardened extension UI (CSP, etc.). Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
 
 **Still optional:** Commerce7-specific **webhook signing** beyond HTTP Basic (ADC “Advanced”).
 
@@ -31,6 +32,7 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/health` | Liveness |
+| GET | `/v1/account/user` | `?tenantId=` + **`Authorization`** — proxies Commerce7 **`GET /account/user`** (extension JWT; **not** gated by `INTERNAL_API_TOKEN`); requires `sync` / client wired |
 | GET | `/oauth/callback` | Stores query stub when `oauth` store wired and `tenantId` present |
 | POST | `/webhooks/commerce7` | Commerce7 webhook envelope |
 | POST | `/lifecycle/install` | Commerce7 **Install URL** — JSON or form body; `tenantId` + installer + client settings (passthrough `raw`) |
@@ -39,6 +41,15 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 | POST | `/reconcile/orders` | `{ tenantId }` — `synced_orders` count vs fresh API walk (Bearer if configured) |
 | POST | `/v1/app-sync` | `tenantId` + ADC app-sync fields — forwards to Commerce7 **`POST /app-sync`** (Bearer if `INTERNAL_API_TOKEN` set); requires `sync` / client wired |
 | POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured) |
+
+### Extension JWT (`GET /v1/account/user`)
+
+Commerce7 passes an **`account`** (Admin) or **`appToken`** (storefront) query param. Your UI should call this API with **`Authorization`** set to that token value and **`tenantId`** matching the tenant. See [User Authentication](https://developer.commerce7.com/docs/authenticate-app).
+
+```bash
+curl -s "http://localhost:3001/v1/account/user?tenantId=your-tenant" \
+  -H "Authorization: PASTE_RAW_JWT_FROM_ACCOUNT_QUERY_PARAM"
+```
 
 ### Manual smoke (`POST /v1/app-sync`)
 

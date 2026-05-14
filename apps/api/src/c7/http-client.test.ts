@@ -86,4 +86,31 @@ describe("HttpCommerce7Client", () => {
       }),
     );
   });
+
+  it("GET /account/user uses tenant + account Authorization (no app Basic)", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "u1", firstName: "A", lastName: "B", email: "a@b.com", role: "Admin" }), {
+        status: 200,
+      }),
+    );
+    const client = new HttpCommerce7Client({
+      baseUrl: "https://api.commerce7.com/v1",
+      appId: "app",
+      appSecret: "sec",
+      fetchImpl: fetchImpl as (input: string, init?: RequestInit) => Promise<Response>,
+    });
+    const r = await client.getAccountUser("tenant-x", "raw-jwt-from-url");
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ id: "u1", firstName: "A" });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.commerce7.com/v1/account/user",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "raw-jwt-from-url",
+          tenant: "tenant-x",
+        }),
+      }),
+    );
+  });
 });

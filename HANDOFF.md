@@ -52,12 +52,14 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 - API: **`POST /sync/orders`** — cursor sync using **`MockCommerce7Client`** or **`HttpCommerce7Client`** (`COMMERCE7_CLIENT_ID` + **`COMMERCE7_CLIENT_SECRET`**; optional **`COMMERCE7_USE_MOCK=1`** to force mock). **`sync_state`** + optional **`synced_orders`** persistence. Optional **`INTERNAL_API_TOKEN`** — when set, requires **`Authorization: Bearer …`** on **sync / reconcile / analytics / app-sync**.
 - API: **`POST /reconcile/orders`** — compares **`synced_orders`** count to a fresh full API walk (needs Postgres order persistence + HTTP client).
 - API: **`POST /v1/app-sync`** — validated proxy to Commerce7 **[App Sync](https://developer.commerce7.com/docs/app-apis-webhooks#2-app-sync)** (`POST /app-sync`); same optional **`INTERNAL_API_TOKEN`** Bearer gate as sync/reconcile/analytics. Registered only when **`sync`** (Commerce7 client) is configured.
+- API: **`POST /v1/events`** — idempotent analytics sink (**`tenantId` + `clientEventId`**, 64KB max); optional **`INTERNAL_API_TOKEN`** Bearer gate.
+- API: **`GET /v1/account/user`** — proxies Commerce7 **[GET /account/user](https://developer.commerce7.com/docs/authenticate-app)** for Admin extension **`account`** (or storefront **`appToken`**) JWT validation. Query **`tenantId`**, header **`Authorization`** = token string from Commerce7 (often **raw JWT**, not necessarily `Bearer …`). **Not** gated by **`INTERNAL_API_TOKEN`**. Requires **`sync`** client (same as other C7 routes in this app).
 - API: **`POST /lifecycle/install`** and **`POST /lifecycle/uninstall`** — targets for Commerce7 ADC **Install URL** / **Uninstall URL** (JSON or form body); persisted in **`app_installs`**. Optional **`LIFECYCLE_BASIC_USER`** + **`LIFECYCLE_BASIC_PASSWORD`** (ADC Installation security).
 - Web: stock Next.js home page. End-to-end API smoke: **`apps/api/src/smoke/v1-chain.test.ts`**.
 
 **Not production-complete (next):**
 
-- Commerce7-specific **webhook signing** if Basic is not used; **extension / Admin JWT** validation per **`authenticate-app`**; scheduled reconciliation / broker; extension UI per brief. See **`docs/IMPLEMENTATION-LOG.md`**. (**`INTERNAL_API_TOKEN`** already gates operator-only routes when configured.)
+- Commerce7-specific **webhook signing** if Basic is not used; **extension UI** / hardening beyond **`GET /v1/account/user`** gateway; scheduled reconciliation / broker per brief. See **`docs/IMPLEMENTATION-LOG.md`**. (**`INTERNAL_API_TOKEN`** already gates operator-only routes when configured.)
 
 Background reading for ordering work: **`docs/EXECUTION-PLAYBOOK.md`**.
 

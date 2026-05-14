@@ -11,7 +11,7 @@ import { InMemorySyncStateStore } from "./sync/sync-state.js";
 import { InMemoryWebhookDeliveryStore } from "./webhook/store.js";
 
 /**
- * Cross-surface smoke: health → lifecycle → sync → reconcile → app-sync → analytics → oauth → webhooks.
+ * Cross-surface smoke: health → lifecycle → account user → sync → reconcile → app-sync → analytics → oauth → webhooks.
  */
 describe("V1 interconnection (in-memory)", () => {
   it("full Phase-A style path", async () => {
@@ -54,6 +54,15 @@ describe("V1 interconnection (in-memory)", () => {
     });
     expect(life.status).toBe(200);
     expect((await installStore.getInstall(tenant))?.uninstalledAt).toBeNull();
+
+    const acct = await app.request(
+      `http://localhost/v1/account/user?tenantId=${encodeURIComponent(tenant)}`,
+      { headers: { Authorization: "iframe-account-jwt" } },
+    );
+    expect(acct.status).toBe(200);
+    expect(c7.accountUserCalls).toEqual([
+      { tenantId: tenant, authorization: "iframe-account-jwt" },
+    ]);
 
     const syncBody = { tenantId: tenant };
     const sy1 = await app.request("http://localhost/sync/orders", {

@@ -34,7 +34,8 @@ This runs (see `scripts/v1-pipeline.sh`):
 | 9 | Webhook optional Basic Auth | `basic-auth-route.test.ts` |
 | 10 | Install/Uninstall lifecycle + `app_installs` | `lifecycle-route.test.ts`, `v1-chain` |
 | 11 | Internal Bearer + **`POST /v1/app-sync`** | `internal-auth-route.test.ts`, `app-sync-route.test.ts` |
-| *Next (prod hardening)* | Scheduled jobs, Admin JWT verification, webhook signing | — |
+| 12 | **`GET /v1/account/user`** (extension JWT proxy) | `account-user-route.test.ts`, `v1-chain` |
+| *Next (prod hardening)* | Scheduled jobs, webhook signing, extension UI | — |
 
 ## Local Postgres (optional)
 

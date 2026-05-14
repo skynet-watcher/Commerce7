@@ -15,6 +15,7 @@ type PageSpec = {
 export class MockCommerce7Client implements Commerce7Client {
   private readonly pages: Map<PageKey, PageSpec>;
   readonly appSyncCalls: { tenantId: string; body: AppSyncCreateInput }[] = [];
+  readonly accountUserCalls: { tenantId: string; authorization: string }[] = [];
 
   constructor(pages: Map<PageKey, PageSpec>) {
     this.pages = pages;
@@ -60,5 +61,30 @@ export class MockCommerce7Client implements Commerce7Client {
 
   async createAppSync(tenantId: string, body: AppSyncCreateInput): Promise<void> {
     this.appSyncCalls.push({ tenantId, body: structuredClone(body) });
+  }
+
+  async getAccountUser(tenantId: string, authorization: string) {
+    this.accountUserCalls.push({ tenantId, authorization });
+    if (authorization === "mock-401") {
+      return {
+        status: 401,
+        body: {
+          statusCode: 401,
+          type: "unauthorized",
+          message: "Unauthorized user",
+          errors: [],
+        },
+      };
+    }
+    return {
+      status: 200,
+      body: {
+        id: "acc-mock-1",
+        firstName: "Mock",
+        lastName: "Merchant",
+        email: "merchant@example.com",
+        role: "Admin Owner",
+      },
+    };
   }
 }

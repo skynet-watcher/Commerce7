@@ -9,7 +9,7 @@ import { InMemorySyncStateStore } from "../sync/sync-state.js";
 import { InMemoryWebhookDeliveryStore } from "../webhook/store.js";
 
 describe("internal Bearer gate", () => {
-  it("returns 401 for sync, reconcile, events, and app-sync when token configured and header missing", async () => {
+  it("returns 401 for sync, reconcile, events, and app-sync when token configured and header missing; GET /v1/account/user still allowed with C7 JWT", async () => {
     const app = createApp({
       env: loadEnv(),
       webhookStore: new InMemoryWebhookDeliveryStore(),
@@ -59,6 +59,11 @@ describe("internal Bearer gate", () => {
       }),
     });
     expect(appSync.status).toBe(401);
+
+    const accountUser = await app.request("http://localhost/v1/account/user?tenantId=t", {
+      headers: { Authorization: "c7-extension-jwt" },
+    });
+    expect(accountUser.status).toBe(200);
   });
 
   it("allows sync when Bearer matches", async () => {

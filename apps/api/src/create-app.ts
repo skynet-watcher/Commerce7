@@ -256,6 +256,29 @@ export function createApp(options: CreateAppOptions): Hono {
 
   if (sync) {
     const { client: c7, syncState, orderPersistence } = sync;
+
+    app.get("/v1/account/user", async (c) => {
+      const tenantId = c.req.query("tenantId")?.trim() ?? "";
+      if (!tenantId) {
+        return c.json(
+          {
+            error: "validation_error",
+            details: { tenantId: ["Query param tenantId is required"] },
+          },
+          400,
+        );
+      }
+      const authorization = c.req.header("Authorization")?.trim() ?? "";
+      if (!authorization) {
+        return c.json({ error: "missing_authorization" }, 400);
+      }
+      const result = await c7.getAccountUser(tenantId, authorization);
+      return new Response(JSON.stringify(result.body ?? null), {
+        status: result.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
     app.post("/sync/orders", async (c) => {
       const denied = denyUnlessInternalBearer(c, internalApiToken);
       if (denied) {
