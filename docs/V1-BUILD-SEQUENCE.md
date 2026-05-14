@@ -17,17 +17,22 @@ This runs (see `scripts/v1-pipeline.sh`):
 3. **`pnpm test`** — includes Postgres integration tests when **`TEST_DATABASE_URL`** is set (same pattern as CI).  
 4. **`pnpm build`**.
 
-**CI** (`.github/workflows/ci.yml`) mirrors this on **Node 20** with a **Postgres 16** service and **`TEST_DATABASE_URL`** set so **webhook** and **`sync_state`** integration tests run every PR.
+**CI** (`.github/workflows/ci.yml`) mirrors this on **Node 20** with a **Postgres 16** service and **`TEST_DATABASE_URL`** so **webhook**, **`sync_state`**, **`synced_orders`**, **`analytics_events`**, and **`oauth_sessions`** integration tests can run every PR.
 
 ## Segment order (see also `docs/IMPLEMENTATION-LOG.md`)
 
 | Order | Deliverable | Interconnection smoke |
-|-------|-------------|------------------------|
-| 1 | Webhook Zod schema + idempotency | Unit tests only |
-| 2 | `POST /webhooks/commerce7` + in-memory dedupe | `src/v1-chain.test.ts` + route tests |
-| 3 | `webhook_deliveries` table + `PgWebhookDeliveryStore` | `pg-route.integration.test.ts` + `v1-chain` |
-| 4 | **`Commerce7Client` + `MockCommerce7Client` + `sync_state` + `POST /sync/orders`** | Extended `v1-chain.test.ts`, `sync/*.test.ts`, `pg-sync-state.integration.test.ts` |
-| *Next* | HTTP `Commerce7Client` (Basic Auth + `tenant`) + sandbox | Phase B |
+|------|-------------|------------------------|
+| 1 | Webhook Zod schema + idempotency | Unit tests |
+| 2 | `POST /webhooks/commerce7` + stores | `v1-chain.test.ts` |
+| 3 | Postgres tables + migrations | Integration tests with `TEST_DATABASE_URL` |
+| 4 | Mock / HTTP `Commerce7Client` + `sync_state` | `create-client.test.ts`, `http-client.test.ts` |
+| 5 | `synced_orders` + sync persistence | `run-order-sync.test.ts` |
+| 6 | `POST /reconcile/orders` | `reconcile.test.ts`, `sync-route.test.ts` |
+| 7 | `POST /v1/events` | `events-route.test.ts`, `v1-chain` |
+| 8 | OAuth stub + `oauth_sessions` | `oauth-route.test.ts`, `v1-chain` |
+| 9 | Webhook optional Basic Auth | `basic-auth-route.test.ts` |
+| *Next (prod hardening)* | Token exchange, signing, scheduled jobs, authz on internal routes | — |
 
 ## Local Postgres (optional)
 

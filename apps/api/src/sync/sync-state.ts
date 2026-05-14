@@ -1,6 +1,7 @@
 import type { Pool } from "pg";
 
 import { SYNC_RESOURCE_ORDER, type Commerce7Client } from "../c7/types.js";
+import type { OrderRefPersistence } from "./order-persistence.js";
 
 export type SyncStateStore = {
   getCursor(tenantId: string, resource: string): Promise<string | null>;
@@ -67,6 +68,11 @@ export type OrderSyncBatchResult = {
   persistedCursor: string | null;
 };
 
+export type RunOrderSyncOptions = {
+  /** When set, upsert batch order refs into `synced_orders` (or in-memory equivalent). */
+  orderPersistence?: OrderRefPersistence;
+};
+
 /**
  * One cursor step toward listing all orders for a tenant (Commerce7-style pagination).
  */
@@ -74,6 +80,7 @@ export async function runOrderSyncStep(
   client: Commerce7Client,
   syncState: SyncStateStore,
   tenantId: string,
+  options?: RunOrderSyncOptions,
 ): Promise<OrderSyncBatchResult> {
   const stored = await syncState.getCursor(tenantId, SYNC_RESOURCE_ORDER);
   const cursor = stored ?? "start";
@@ -83,6 +90,10 @@ export async function runOrderSyncStep(
     cursor,
     limit: 50,
   });
+
+  if (options?.orderPersistence && orders.length > 0) {
+    await options.orderPersistence.upsertOrderRefs(tenantId, orders);
+  }
 
   if (nextCursor !== null) {
     await syncState.setCursor(tenantId, SYNC_RESOURCE_ORDER, nextCursor);

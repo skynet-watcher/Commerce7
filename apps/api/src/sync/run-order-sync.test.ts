@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MockCommerce7Client } from "../c7/mock-client.js";
 import { SYNC_RESOURCE_ORDER } from "../c7/types.js";
+import { InMemoryOrderRefPersistence } from "./order-persistence.js";
 import { InMemorySyncStateStore, runOrderSyncStep } from "./sync-state.js";
 
 describe("runOrderSyncStep", () => {
@@ -26,6 +27,17 @@ describe("runOrderSyncStep", () => {
     expect(s3.fetched).toBe(2);
     expect(s3.completedWalk).toBe(false);
     expect(s3.persistedCursor).toBe("page-2");
+  });
+
+  it("persists orders when orderPersistence is passed", async () => {
+    const client = MockCommerce7Client.twoPageDemo();
+    const sync = new InMemorySyncStateStore();
+    const persist = new InMemoryOrderRefPersistence();
+    const tenant = "persist";
+
+    await runOrderSyncStep(client, sync, tenant, { orderPersistence: persist });
+    await runOrderSyncStep(client, sync, tenant, { orderPersistence: persist });
+    expect(await persist.countOrders(tenant)).toBe(3);
   });
 
   it("isolates cursors by tenant", async () => {

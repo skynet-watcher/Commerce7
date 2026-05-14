@@ -45,16 +45,18 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 | **`scripts/fetch_docs.py`** | Regenerates **`docs/developer/`** and **`docs/README.md`** from the public hub. |
 | **`.env.example`** | Template for secrets and URLs — **never commit** a filled `.env`. |
 
-**Already implemented (minimal):**
+**Already implemented (V1 backbone):**
 
-- API: `GET /health`, `GET /`, stub `GET /oauth/callback`.
-- API: **`POST /webhooks/commerce7`** — validates body (Zod), **idempotent** via **`InMemoryWebhookDeliveryStore`** (dev) or **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set; run `pnpm --filter @commerce7/api db:migrate` after changing SQL. Integration tests use **`TEST_DATABASE_URL`** (never truncate a shared prod DB).
-- API: **`POST /sync/orders`** — advances **Commerce7-style cursor** sync one batch per request using **`MockCommerce7Client`** and **`sync_state`** (Postgres or in-memory like webhooks). Replace the client with a real HTTP implementation in Phase B.
-- Web: stock Next.js home page.
+- API: `GET /health`, `GET /`, **`GET /oauth/callback`** (stub: persists raw query when **`oauth_sessions`** store is wired and `tenantId` is present).
+- API: **`POST /webhooks/commerce7`** — Zod body, **idempotent** deliveries; **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set (run **`pnpm --filter @commerce7/api db:migrate`**). Optional **HTTP Basic** gate when **`WEBHOOK_BASIC_USER`** + **`WEBHOOK_BASIC_PASSWORD`** are both set (ADC “Advanced”).
+- API: **`POST /sync/orders`** — cursor sync using **`MockCommerce7Client`** or **`HttpCommerce7Client`** (`COMMERCE7_CLIENT_ID` + `COMMERCE7_CLIENT_SECRET`; optional **`COMMERCE7_USE_MOCK=1`** to force mock). **`sync_state`** + optional **`synced_orders`** persistence.
+- API: **`POST /reconcile/orders`** — compares **`synced_orders`** count to a fresh full API walk (needs Postgres order persistence + HTTP client).
+- API: **`POST /v1/events`** — idempotent analytics sink (**`tenantId` + `clientEventId`**, 64KB max).
+- Web: stock Next.js home page. End-to-end API smoke: **`apps/api/src/smoke/v1-chain.test.ts`**.
 
-**Not implemented yet (your work):**
+**Not production-complete (next):**
 
-- Real **HTTP `Commerce7Client`** (Basic Auth + `tenant` header), OAuth / token storage, webhook **signature** verification, reconciliation job, and extension UI as required by the brief.
+- OAuth **token exchange** and refresh; Commerce7-specific **webhook signing** if Basic is not used; **authz** on internal routes (`/sync`, `/reconcile`, `/v1/events`); scheduled reconciliation / broker; extension UI per brief. See **`docs/IMPLEMENTATION-LOG.md`**.
 
 Background reading for ordering work: **`docs/EXECUTION-PLAYBOOK.md`**.
 
