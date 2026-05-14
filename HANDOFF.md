@@ -48,6 +48,7 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 **Already implemented (minimal):**
 
 - API: `GET /health`, `GET /`, stub `GET /oauth/callback`, stub `POST /webhooks/commerce7`.
+- API: **Commerce7 webhook parsing primitives** — Zod `commerce7WebhookBodySchema` + `deriveWebhookIdempotencyKey()` in `apps/api/src/webhook/` (unit-tested); HTTP dedupe wiring tracked in [`docs/IMPLEMENTATION-LOG.md`](docs/IMPLEMENTATION-LOG.md).
 - Web: stock Next.js home page.
 
 **Not implemented yet (your work):**

@@ -11,6 +11,8 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Onboarding:** **[`docs/FULL-DEV-HANDOFF.md`](docs/FULL-DEV-HANDOFF.md)** (full) · **[`HANDOFF.md`](HANDOFF.md)** (short).
 
+**Incremental implementation status:** **[`docs/IMPLEMENTATION-LOG.md`](docs/IMPLEMENTATION-LOG.md)**.
+
 **Product planning:** **[`docs/plans/CUSTOMER-INSIGHTS-MVP.md`](docs/plans/CUSTOMER-INSIGHTS-MVP.md)** (Insights MVP + REST research), **[`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`](docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md)** (click-level + Admin reports), **[`docs/plans/V1-RISK-STRESS-TEST-PLAN.md`](docs/plans/V1-RISK-STRESS-TEST-PLAN.md)** (stress tests + robustness tracker).
 
 ## Commerce7 documentation (offline mirror)

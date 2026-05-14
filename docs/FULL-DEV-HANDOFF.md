@@ -18,7 +18,8 @@ This file is the **single consolidated handoff** for engineers joining the proje
 | 5 | **`docs/plans/CUSTOMER-INSIGHTS-MVP.md`** | REST-backed insights / API research |
 | 6 | **`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`** | Click-level collector + Full App Admin reports |
 | 7 | [`docs/README.md`](README.md) | Index of mirrored Commerce7 guides |
-| 8 | [`docs/KICKOFF-TOMORROW.md`](KICKOFF-TOMORROW.md) | Access checklist |
+| 8 | [`docs/IMPLEMENTATION-LOG.md`](IMPLEMENTATION-LOG.md) | **What is built vs planned** (incremental checklist) |
+| 9 | [`docs/KICKOFF-TOMORROW.md`](KICKOFF-TOMORROW.md) | Access checklist |
 
 **Before coding:** copy [`.env.example`](../.env.example) → `.env` at repo root (never commit `.env`).
 
