@@ -9,6 +9,8 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Stacks & tooling:** **[`docs/STACK.md`](docs/STACK.md)** — Node 26, pnpm, Hono API (`apps/api`), Next.js UI (`apps/web`), ngrok. Run **`pnpm install`** then **`pnpm dev`** / **`pnpm dev:web`**.
 
+**Onboarding another engineer:** **[`HANDOFF.md`](HANDOFF.md)**.
+
 ## Commerce7 documentation (offline mirror)
 
 Guide pages from the developer hub are mirrored under **`docs/developer/`** by
