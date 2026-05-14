@@ -1,0 +1,350 @@
+{
+  "fetched_at_utc": "2026-05-14T03:37:53.448017+00:00",
+  "source": "https://developer.commerce7.com/docs/app-development-center",
+  "page_count": 49,
+  "pages": [
+    {
+      "slug": "/docs/announcements",
+      "url": "https://developer.commerce7.com/docs/announcements",
+      "file": "announcements.md",
+      "ok": true,
+      "title": "Announcements"
+    },
+    {
+      "slug": "/docs/api-versioning",
+      "url": "https://developer.commerce7.com/docs/api-versioning",
+      "file": "api-versioning.md",
+      "ok": true,
+      "title": "API Versioning"
+    },
+    {
+      "slug": "/docs/app-apis-webhooks",
+      "url": "https://developer.commerce7.com/docs/app-apis-webhooks",
+      "file": "app-apis-webhooks.md",
+      "ok": true,
+      "title": "APIs & Webhooks"
+    },
+    {
+      "slug": "/docs/app-development-center",
+      "url": "https://developer.commerce7.com/docs/app-development-center",
+      "file": "app-development-center.md",
+      "ok": true,
+      "title": "Building Apps on Commerce7"
+    },
+    {
+      "slug": "/docs/app-extensions",
+      "url": "https://developer.commerce7.com/docs/app-extensions",
+      "file": "app-extensions.md",
+      "ok": true,
+      "title": "App Extensions"
+    },
+    {
+      "slug": "/docs/app-security-policy",
+      "url": "https://developer.commerce7.com/docs/app-security-policy",
+      "file": "app-security-policy.md",
+      "ok": true,
+      "title": "Commerce7 App Developer Security Policy"
+    },
+    {
+      "slug": "/docs/app-sync",
+      "url": "https://developer.commerce7.com/docs/app-sync",
+      "file": "app-sync.md",
+      "ok": true,
+      "title": "App Sync"
+    },
+    {
+      "slug": "/docs/authenticate-app",
+      "url": "https://developer.commerce7.com/docs/authenticate-app",
+      "file": "authenticate-app.md",
+      "ok": true,
+      "title": "User Authentication"
+    },
+    {
+      "slug": "/docs/client-settings",
+      "url": "https://developer.commerce7.com/docs/client-settings",
+      "file": "client-settings.md",
+      "ok": true,
+      "title": "Client Settings"
+    },
+    {
+      "slug": "/docs/club-memberships",
+      "url": "https://developer.commerce7.com/docs/club-memberships",
+      "file": "club-memberships.md",
+      "ok": true,
+      "title": "Club Memberships"
+    },
+    {
+      "slug": "/docs/clubs",
+      "url": "https://developer.commerce7.com/docs/clubs",
+      "file": "clubs.md",
+      "ok": true,
+      "title": "Clubs"
+    },
+    {
+      "slug": "/docs/collections",
+      "url": "https://developer.commerce7.com/docs/collections",
+      "file": "collections.md",
+      "ok": true,
+      "title": "Collections"
+    },
+    {
+      "slug": "/docs/commerce7-apis",
+      "url": "https://developer.commerce7.com/docs/commerce7-apis",
+      "file": "commerce7-apis.md",
+      "ok": true,
+      "title": "API Overview"
+    },
+    {
+      "slug": "/docs/commerce7-developer-docs",
+      "url": "https://developer.commerce7.com/docs/commerce7-developer-docs",
+      "file": "commerce7-developer-docs.md",
+      "ok": true,
+      "title": "Commerce7 Developer Docs"
+    },
+    {
+      "slug": "/docs/coupons",
+      "url": "https://developer.commerce7.com/docs/coupons",
+      "file": "coupons.md",
+      "ok": true,
+      "title": "Coupons"
+    },
+    {
+      "slug": "/docs/create-an-app",
+      "url": "https://developer.commerce7.com/docs/create-an-app",
+      "file": "create-an-app.md",
+      "ok": true,
+      "title": "Create an App"
+    },
+    {
+      "slug": "/docs/create-yourapp-listing",
+      "url": "https://developer.commerce7.com/docs/create-yourapp-listing",
+      "file": "create-yourapp-listing.md",
+      "ok": true,
+      "title": "Create Your App Listing"
+    },
+    {
+      "slug": "/docs/creating-an-app",
+      "url": "https://developer.commerce7.com/docs/creating-an-app",
+      "file": "creating-an-app.md",
+      "ok": true,
+      "title": "Create an App"
+    },
+    {
+      "slug": "/docs/custom-app-data",
+      "url": "https://developer.commerce7.com/docs/custom-app-data",
+      "file": "custom-app-data.md",
+      "ok": true,
+      "title": "App Data"
+    },
+    {
+      "slug": "/docs/customer-addresses",
+      "url": "https://developer.commerce7.com/docs/customer-addresses",
+      "file": "customer-addresses.md",
+      "ok": true,
+      "title": "Customer Addresses"
+    },
+    {
+      "slug": "/docs/customer-credit-cards",
+      "url": "https://developer.commerce7.com/docs/customer-credit-cards",
+      "file": "customer-credit-cards.md",
+      "ok": true,
+      "title": "Customer Credit Cards"
+    },
+    {
+      "slug": "/docs/customers",
+      "url": "https://developer.commerce7.com/docs/customers",
+      "file": "customers.md",
+      "ok": true,
+      "title": "Customers"
+    },
+    {
+      "slug": "/docs/departments",
+      "url": "https://developer.commerce7.com/docs/departments",
+      "file": "departments.md",
+      "ok": true,
+      "title": "Departments"
+    },
+    {
+      "slug": "/docs/fulfillment",
+      "url": "https://developer.commerce7.com/docs/fulfillment",
+      "file": "fulfillment.md",
+      "ok": true,
+      "title": "Fulfillment"
+    },
+    {
+      "slug": "/docs/getting-paid",
+      "url": "https://developer.commerce7.com/docs/getting-paid",
+      "file": "getting-paid.md",
+      "ok": true,
+      "title": "Getting Paid"
+    },
+    {
+      "slug": "/docs/gift-cards",
+      "url": "https://developer.commerce7.com/docs/gift-cards",
+      "file": "gift-cards.md",
+      "ok": true,
+      "title": "Gift Cards"
+    },
+    {
+      "slug": "/docs/installs",
+      "url": "https://developer.commerce7.com/docs/installs",
+      "file": "installs.md",
+      "ok": true,
+      "title": "Installs"
+    },
+    {
+      "slug": "/docs/inventory",
+      "url": "https://developer.commerce7.com/docs/inventory",
+      "file": "inventory.md",
+      "ok": true,
+      "title": "Inventory"
+    },
+    {
+      "slug": "/docs/inventory-location",
+      "url": "https://developer.commerce7.com/docs/inventory-location",
+      "file": "inventory-location.md",
+      "ok": true,
+      "title": "Inventory Location"
+    },
+    {
+      "slug": "/docs/marketing-your-app",
+      "url": "https://developer.commerce7.com/docs/marketing-your-app",
+      "file": "marketing-your-app.md",
+      "ok": true,
+      "title": "Marketing Your App"
+    },
+    {
+      "slug": "/docs/notes",
+      "url": "https://developer.commerce7.com/docs/notes",
+      "file": "notes.md",
+      "ok": true,
+      "title": "Notes"
+    },
+    {
+      "slug": "/docs/orders",
+      "url": "https://developer.commerce7.com/docs/orders",
+      "file": "orders.md",
+      "ok": true,
+      "title": "Orders"
+    },
+    {
+      "slug": "/docs/partner-slack-community-guidelines",
+      "url": "https://developer.commerce7.com/docs/partner-slack-community-guidelines",
+      "file": "partner-slack-community-guidelines.md",
+      "ok": true,
+      "title": "Partner Slack Community Guidelines"
+    },
+    {
+      "slug": "/docs/pricing",
+      "url": "https://developer.commerce7.com/docs/pricing",
+      "file": "pricing.md",
+      "ok": true,
+      "title": "App Pricing and Fees"
+    },
+    {
+      "slug": "/docs/products",
+      "url": "https://developer.commerce7.com/docs/products",
+      "file": "products.md",
+      "ok": true,
+      "title": "Products"
+    },
+    {
+      "slug": "/docs/promotions",
+      "url": "https://developer.commerce7.com/docs/promotions",
+      "file": "promotions.md",
+      "ok": true,
+      "title": "Promotions"
+    },
+    {
+      "slug": "/docs/releasing-a-new-version",
+      "url": "https://developer.commerce7.com/docs/releasing-a-new-version",
+      "file": "releasing-a-new-version.md",
+      "ok": true,
+      "title": "Release App Updates"
+    },
+    {
+      "slug": "/docs/reservation-types",
+      "url": "https://developer.commerce7.com/docs/reservation-types",
+      "file": "reservation-types.md",
+      "ok": true,
+      "title": "Reservation Types (Experiences)"
+    },
+    {
+      "slug": "/docs/reservations",
+      "url": "https://developer.commerce7.com/docs/reservations",
+      "file": "reservations.md",
+      "ok": true,
+      "title": "Reservations"
+    },
+    {
+      "slug": "/docs/shipping",
+      "url": "https://developer.commerce7.com/docs/shipping",
+      "file": "shipping.md",
+      "ok": true,
+      "title": "Shipping"
+    },
+    {
+      "slug": "/docs/submit-publish-your-app",
+      "url": "https://developer.commerce7.com/docs/submit-publish-your-app",
+      "file": "submit-publish-your-app.md",
+      "ok": true,
+      "title": "Submit Your App"
+    },
+    {
+      "slug": "/docs/tags",
+      "url": "https://developer.commerce7.com/docs/tags",
+      "file": "tags.md",
+      "ok": true,
+      "title": "Tags"
+    },
+    {
+      "slug": "/docs/taxes",
+      "url": "https://developer.commerce7.com/docs/taxes",
+      "file": "taxes.md",
+      "ok": true,
+      "title": "Taxes"
+    },
+    {
+      "slug": "/docs/test-your-app",
+      "url": "https://developer.commerce7.com/docs/test-your-app",
+      "file": "test-your-app.md",
+      "ok": true,
+      "title": "Test Your App"
+    },
+    {
+      "slug": "/docs/vendors",
+      "url": "https://developer.commerce7.com/docs/vendors",
+      "file": "vendors.md",
+      "ok": true,
+      "title": "Vendors"
+    },
+    {
+      "slug": "/docs/webhooks",
+      "url": "https://developer.commerce7.com/docs/webhooks",
+      "file": "webhooks.md",
+      "ok": true,
+      "title": "Webhooks"
+    },
+    {
+      "slug": "/docs/wine-appellations",
+      "url": "https://developer.commerce7.com/docs/wine-appellations",
+      "file": "wine-appellations.md",
+      "ok": true,
+      "title": "Wine Appellations"
+    },
+    {
+      "slug": "/docs/wine-varietals",
+      "url": "https://developer.commerce7.com/docs/wine-varietals",
+      "file": "wine-varietals.md",
+      "ok": true,
+      "title": "Wine Varietals"
+    },
+    {
+      "slug": "/docs/your-team",
+      "url": "https://developer.commerce7.com/docs/your-team",
+      "file": "your-team.md",
+      "ok": true,
+      "title": "Team"
+    }
+  ]
+}
