@@ -26,6 +26,20 @@ source of truth.
 4. Add your application code (this repo is intentionally minimal until you pick
    a stack).
 
+## Publish to GitHub
+
+This folder is a git repository on your machine at `/Users/eric/commerce7-plugin`.
+The GitHub CLI (`gh`) is installed here, but you are not logged in yet. To create
+the repo under your account and push:
+
+```bash
+gh auth login
+cd /Users/eric/commerce7-plugin
+gh repo create commerce7-plugin --public --source=. --remote=origin --push
+```
+
+Use another name instead of `commerce7-plugin` if you prefer. If the remote already exists, run `git remote remove origin` first or pass a different remote name.
+
 ## License
 
 The **scraped documentation** remains property of Commerce7. Any **original code**
