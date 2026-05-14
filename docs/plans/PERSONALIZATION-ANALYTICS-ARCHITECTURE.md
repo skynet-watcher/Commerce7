@@ -172,3 +172,5 @@ Questions not answerable from mirrored docs alone:
 ---
 
 *Architecture note: confirm storefront instrumentation details with Commerce7 and pilot merchants before promising click-level metrics at scale.*
+
+**V1 validation:** **[`V1-RISK-STRESS-TEST-PLAN.md`](V1-RISK-STRESS-TEST-PLAN.md)** — per-function stress tests, kill criteria, and maintainability tracker.
