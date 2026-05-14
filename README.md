@@ -9,7 +9,7 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Stacks & tooling:** **[`docs/STACK.md`](docs/STACK.md)** — Node 26, pnpm, Hono API (`apps/api`), Next.js UI (`apps/web`), ngrok. Run **`pnpm install`** then **`pnpm dev`** / **`pnpm dev:web`**.
 
-**Onboarding another engineer:** **[`HANDOFF.md`](HANDOFF.md)**.
+**Onboarding:** **[`docs/FULL-DEV-HANDOFF.md`](docs/FULL-DEV-HANDOFF.md)** (full) · **[`HANDOFF.md`](HANDOFF.md)** (short).
 
 **Product planning:** **[`docs/plans/CUSTOMER-INSIGHTS-MVP.md`](docs/plans/CUSTOMER-INSIGHTS-MVP.md)** (Insights MVP + REST research), **[`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`](docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md)** (click-level + Admin reports), **[`docs/plans/V1-RISK-STRESS-TEST-PLAN.md`](docs/plans/V1-RISK-STRESS-TEST-PLAN.md)** (stress tests + robustness tracker).
 

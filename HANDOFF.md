@@ -2,9 +2,11 @@
 
 This document orients a new engineer on **what exists today**, **how to run it**, and **sensible next steps**. Treat the live Commerce7 developer site as canonical; local copies are for speed and search.
 
+**Full single-document handoff (print / share):** **[`docs/FULL-DEV-HANDOFF.md`](docs/FULL-DEV-HANDOFF.md)**
+
 ### Team: read in this order
 
-1. **[`HANDOFF.md`](HANDOFF.md)** (this file) — setup, commands, risks overview  
+1. **[`docs/FULL-DEV-HANDOFF.md`](docs/FULL-DEV-HANDOFF.md)** — **complete** handoff (build order, sandbox vs not, links) — or this shorter **`HANDOFF.md`**  
 2. **[`docs/STACK.md`](docs/STACK.md)** — Node, pnpm, `apps/api` / `apps/web`  
 3. **[`docs/EXECUTION-PLAYBOOK.md`](docs/EXECUTION-PLAYBOOK.md)** — spec → ADC → build order  
 4. **[`docs/plans/V1-RISK-STRESS-TEST-PLAN.md`](docs/plans/V1-RISK-STRESS-TEST-PLAN.md)** — **V1: stress-test each function; tracker T1–T11; kill criteria**  
