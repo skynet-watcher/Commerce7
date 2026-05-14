@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { appSyncCreateInputSchema, type AppSyncCreateInput } from "./app-sync-schema.js";
 import { fetchWithBackoff } from "../http/fetch-with-backoff.js";
 import type { Commerce7Client, ListOrdersParams, ListOrdersResult } from "./types.js";
 
@@ -69,5 +70,26 @@ export class HttpCommerce7Client implements Commerce7Client {
       orders: parsed.data.orders.map((o) => ({ id: o.id, updatedAt: o.updatedAt })),
       nextCursor: next,
     };
+  }
+
+  async createAppSync(tenantId: string, body: AppSyncCreateInput): Promise<void> {
+    const parsed = appSyncCreateInputSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new Error("Commerce7 createAppSync: invalid body shape");
+    }
+    const res = await this.fetchImpl(`${this.baseUrl}/app-sync`, {
+      method: "POST",
+      headers: {
+        Authorization: this.header,
+        tenant: tenantId,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(parsed.data),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Commerce7 app-sync failed: HTTP ${res.status} ${text.slice(0, 200)}`);
+    }
   }
 }

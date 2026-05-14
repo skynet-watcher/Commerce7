@@ -1,3 +1,7 @@
+import type { AppSyncCreateInput } from "./app-sync-schema.js";
+
+export type { AppSyncCreateInput } from "./app-sync-schema.js";
+
 /** Minimal order shape for cursor sync (IDs + watermark). */
 export type C7OrderRef = {
   id: string;
@@ -19,6 +23,8 @@ export type ListOrdersResult = {
 
 export interface Commerce7Client {
   listOrders(params: ListOrdersParams): Promise<ListOrdersResult>;
+  /** POST `/v1/app-sync` — surface integration status on the object in Commerce7 Admin. */
+  createAppSync(tenantId: string, body: AppSyncCreateInput): Promise<void>;
 }
 
 export const SYNC_RESOURCE_ORDER = "order" as const;

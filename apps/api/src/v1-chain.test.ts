@@ -11,7 +11,7 @@ import { InMemorySyncStateStore } from "./sync/sync-state.js";
 import { InMemoryWebhookDeliveryStore } from "./webhook/store.js";
 
 /**
- * Cross-surface smoke: health → lifecycle → sync (persisted) → reconcile → analytics → oauth → webhooks.
+ * Cross-surface smoke: health → lifecycle → sync → reconcile → app-sync → analytics → oauth → webhooks.
  */
 describe("V1 interconnection (in-memory)", () => {
   it("full Phase-A style path", async () => {
@@ -23,12 +23,13 @@ describe("V1 interconnection (in-memory)", () => {
     const installStore = new InMemoryAppInstallStore();
     const env = loadEnv();
     const tenant = "v1-tenant-chain";
+    const c7 = MockCommerce7Client.twoPageDemo();
 
     const app = createApp({
       env,
       webhookStore: store,
       sync: {
-        client: MockCommerce7Client.twoPageDemo(),
+        client: c7,
         syncState,
         orderPersistence,
       },
@@ -79,6 +80,24 @@ describe("V1 interconnection (in-memory)", () => {
     });
     expect(rec.status).toBe(200);
     expect(((await rec.json()) as { match: boolean }).match).toBe(true);
+
+    const appSync = await app.request("http://localhost/v1/app-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId: tenant,
+        objectType: "Order",
+        objectId: "o-chain",
+        status: "Success",
+      }),
+    });
+    expect(appSync.status).toBe(200);
+    expect(c7.appSyncCalls).toEqual([
+      {
+        tenantId: tenant,
+        body: { objectType: "Order", objectId: "o-chain", status: "Success" },
+      },
+    ]);
 
     const ev = await app.request("http://localhost/v1/events", {
       method: "POST",

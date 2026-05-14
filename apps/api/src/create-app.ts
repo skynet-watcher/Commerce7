@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { z } from "zod";
 
 import { verifyInternalBearer } from "./auth/internal-bearer.js";
+import { appSyncRouteBodySchema } from "./c7/app-sync-schema.js";
 import type { Commerce7Client } from "./c7/types.js";
 import type { Env } from "./env.js";
 import { analyticsEventBodySchema, type AnalyticsEventStore } from "./events/analytics-schema.js";
@@ -306,6 +307,30 @@ export function createApp(options: CreateAppOptions): Hono {
         return c.json({ ok: true, ...r });
       });
     }
+
+    app.post("/v1/app-sync", async (c) => {
+      const denied = denyUnlessInternalBearer(c, internalApiToken);
+      if (denied) {
+        return denied;
+      }
+      const raw = await c.req.text();
+      if (raw.length > 65_536) {
+        return c.json({ error: "payload_too_large" }, 413);
+      }
+      let json: unknown;
+      try {
+        json = JSON.parse(raw) as unknown;
+      } catch {
+        return c.json({ error: "invalid_json" }, 400);
+      }
+      const parsed = appSyncRouteBodySchema.safeParse(json);
+      if (!parsed.success) {
+        return c.json({ error: "validation_error", details: parsed.error.flatten() }, 400);
+      }
+      const { tenantId, ...apiBody } = parsed.data;
+      await c7.createAppSync(tenantId, apiBody);
+      return c.json({ ok: true, tenantId });
+    });
   }
 
   return app;

@@ -33,7 +33,7 @@ This runs (see `scripts/v1-pipeline.sh`):
 | 8 | OAuth stub + `oauth_sessions` | `oauth-route.test.ts`, `v1-chain` |
 | 9 | Webhook optional Basic Auth | `basic-auth-route.test.ts` |
 | 10 | Install/Uninstall lifecycle + `app_installs` | `lifecycle-route.test.ts`, `v1-chain` |
-| 11 | Internal Bearer on sync / reconcile / events | `internal-auth-route.test.ts` |
+| 11 | Internal Bearer + **`POST /v1/app-sync`** | `internal-auth-route.test.ts`, `app-sync-route.test.ts` |
 | *Next (prod hardening)* | Scheduled jobs, Admin JWT verification, webhook signing | — |
 
 ## Local Postgres (optional)

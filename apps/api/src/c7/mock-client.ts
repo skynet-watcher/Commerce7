@@ -1,3 +1,4 @@
+import type { AppSyncCreateInput } from "./app-sync-schema.js";
 import type { Commerce7Client, ListOrdersParams, ListOrdersResult } from "./types.js";
 
 type PageKey = string;
@@ -13,6 +14,7 @@ type PageSpec = {
  */
 export class MockCommerce7Client implements Commerce7Client {
   private readonly pages: Map<PageKey, PageSpec>;
+  readonly appSyncCalls: { tenantId: string; body: AppSyncCreateInput }[] = [];
 
   constructor(pages: Map<PageKey, PageSpec>) {
     this.pages = pages;
@@ -54,5 +56,9 @@ export class MockCommerce7Client implements Commerce7Client {
       orders: page.orders.slice(0, limit),
       nextCursor: page.nextCursor,
     };
+  }
+
+  async createAppSync(tenantId: string, body: AppSyncCreateInput): Promise<void> {
+    this.appSyncCalls.push({ tenantId, body: structuredClone(body) });
   }
 }

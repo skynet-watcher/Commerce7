@@ -9,7 +9,7 @@ import { InMemorySyncStateStore } from "../sync/sync-state.js";
 import { InMemoryWebhookDeliveryStore } from "../webhook/store.js";
 
 describe("internal Bearer gate", () => {
-  it("returns 401 for sync, reconcile, and events when token configured and header missing", async () => {
+  it("returns 401 for sync, reconcile, events, and app-sync when token configured and header missing", async () => {
     const app = createApp({
       env: loadEnv(),
       webhookStore: new InMemoryWebhookDeliveryStore(),
@@ -47,6 +47,18 @@ describe("internal Bearer gate", () => {
       }),
     });
     expect(ev.status).toBe(401);
+
+    const appSync = await app.request("http://localhost/v1/app-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId: "t",
+        objectType: "Order",
+        objectId: "o1",
+        status: "Success",
+      }),
+    });
+    expect(appSync.status).toBe(401);
   });
 
   it("allows sync when Bearer matches", async () => {
@@ -69,5 +81,20 @@ describe("internal Bearer gate", () => {
       body: JSON.stringify({ tenantId: "t" }),
     });
     expect(res.status).toBe(200);
+
+    const syncPost = await app.request("http://localhost/v1/app-sync", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer operator-secret",
+      },
+      body: JSON.stringify({
+        tenantId: "t",
+        objectType: "Order",
+        objectId: "o-sync",
+        status: "Success",
+      }),
+    });
+    expect(syncPost.status).toBe(200);
   });
 });

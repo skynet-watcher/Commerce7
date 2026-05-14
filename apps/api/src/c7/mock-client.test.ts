@@ -20,4 +20,15 @@ describe("MockCommerce7Client", () => {
     expect(p.orders).toEqual([]);
     expect(p.nextCursor).toBe(null);
   });
+
+  it("records createAppSync calls", async () => {
+    const client = MockCommerce7Client.twoPageDemo();
+    await client.createAppSync("ten", {
+      objectType: "Order",
+      objectId: "o1",
+      status: "Success",
+    });
+    expect(client.appSyncCalls).toHaveLength(1);
+    expect(client.appSyncCalls[0]!.tenantId).toBe("ten");
+  });
 });

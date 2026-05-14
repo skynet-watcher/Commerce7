@@ -18,6 +18,9 @@ function makeEnv(override: Partial<Env>): Env {
     COMMERCE7_USE_MOCK: undefined,
     WEBHOOK_BASIC_USER: undefined,
     WEBHOOK_BASIC_PASSWORD: undefined,
+    INTERNAL_API_TOKEN: undefined,
+    LIFECYCLE_BASIC_USER: undefined,
+    LIFECYCLE_BASIC_PASSWORD: undefined,
     ...override,
   } as Env;
 }

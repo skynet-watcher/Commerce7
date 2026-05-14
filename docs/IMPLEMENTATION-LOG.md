@@ -17,7 +17,8 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 11 | **End-to-end smoke** | Done | `v1-chain.test.ts` |
 | 12 | **Postgres V1 integration** | Done | `pg-v1.integration.test.ts` (needs `TEST_DATABASE_URL`) |
 | 13 | **`POST /lifecycle/install` / `uninstall`** (ADC Install/Uninstall URL) | Done | `lifecycle/*`, `lifecycle-route.test.ts`, `pg-v1` |
-| 14 | **Optional internal Bearer** on sync / reconcile / analytics | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
+| 14 | **Optional internal Bearer** on sync / reconcile / analytics / **app-sync** | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
+| 15 | **`POST /v1/app-sync`** (push status to Commerce7 Admin on an object) | Done | `c7/app-sync-schema.ts`, `http-client.ts`, `app-sync-route.test.ts`, `v1-chain` |
 
 **Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, extension UI, richer merchant auth. **Note:** Commerce7 **server** API access uses **Basic Auth (app id + secret) + `tenant` header** after install — there is no separate OAuth **code→token** exchange for that path in the public docs; the `oauth_sessions` table remains useful for extension/JWT flows and future ADC features.
 
@@ -36,7 +37,19 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 | POST | `/lifecycle/uninstall` | Commerce7 **Uninstall URL** — `{ tenantId }` |
 | POST | `/sync/orders` | `{ tenantId }` — one Commerce7 cursor batch (`Authorization: Bearer` if `INTERNAL_API_TOKEN` set) |
 | POST | `/reconcile/orders` | `{ tenantId }` — `synced_orders` count vs fresh API walk (Bearer if configured) |
+| POST | `/v1/app-sync` | `tenantId` + ADC app-sync fields — forwards to Commerce7 **`POST /app-sync`** (Bearer if `INTERNAL_API_TOKEN` set); requires `sync` / client wired |
 | POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured) |
+
+### Manual smoke (`POST /v1/app-sync`)
+
+Requires app credentials (`COMMERCE7_CLIENT_ID` / `COMMERCE7_CLIENT_SECRET`) and a real `tenantId` / `objectId` in Commerce7. If **`INTERNAL_API_TOKEN`** is not set, omit the **`Authorization`** header.
+
+```bash
+curl -s -X POST http://localhost:3001/v1/app-sync \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_INTERNAL_TOKEN' \
+  -d '{"tenantId":"your-tenant","objectType":"Order","objectId":"<uuid>","status":"Success"}'
+```
 
 ### Manual smoke (`POST /webhooks/commerce7`)
 

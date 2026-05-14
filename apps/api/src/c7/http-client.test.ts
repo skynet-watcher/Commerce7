@@ -53,4 +53,37 @@ describe("HttpCommerce7Client", () => {
     const r = await client.listOrders({ tenantId: "t", cursor: "start" });
     expect(r.nextCursor).toBe(null);
   });
+
+  it("POSTs app-sync with Basic Auth and tenant header", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+    const client = new HttpCommerce7Client({
+      baseUrl: "https://api.commerce7.com/v1",
+      appId: "app",
+      appSecret: "sec",
+      fetchImpl: fetchImpl as (input: string, init?: RequestInit) => Promise<Response>,
+    });
+    await client.createAppSync("my-tenant", {
+      objectType: "Customer",
+      objectId: "c1",
+      status: "Error",
+      issues: ["x"],
+    });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.commerce7.com/v1/app-sync",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Basic " + Buffer.from("app:sec").toString("base64"),
+          tenant: "my-tenant",
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({
+          objectType: "Customer",
+          objectId: "c1",
+          status: "Error",
+          issues: ["x"],
+        }),
+      }),
+    );
+  });
 });

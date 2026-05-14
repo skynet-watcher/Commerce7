@@ -30,7 +30,7 @@ This file is the **single consolidated handoff** for engineers joining the proje
 
 | Path | Purpose |
 |------|---------|
-| **`apps/api`** | Hono — **`/health`**, **`/webhooks/commerce7`**, **`/lifecycle/*`**, **`/sync/orders`**, **`/reconcile/orders`**, **`/v1/events`**, **`/oauth/callback`**. See **`docs/IMPLEMENTATION-LOG.md`** (API table + env). |
+| **`apps/api`** | Hono — **`/health`**, **`/webhooks/commerce7`**, **`/lifecycle/*`**, **`/sync/orders`**, **`/reconcile/orders`**, **`/v1/app-sync`**, **`/v1/events`**, **`/oauth/callback`**. See **`docs/IMPLEMENTATION-LOG.md`**. |
 | **`apps/web`** | Next.js (App Router) + React 19 + Tailwind — **exact release** in `apps/web/package.json` / lockfile (as of repo date, Next **16.x** is current stable on npm). Dev **http://localhost:3000**. Stock starter page. |
 | **`docs/developer/**`** | Mirrored Commerce7 guides (by topic). Regenerate: `python3 scripts/fetch_docs.py` |
 | **`docs/plans/**`** | Product/engineering plans (Insights, personalization arch, V1 stress tests) |
