@@ -229,14 +229,19 @@ If for whatever reason the webhook event fails, you'll receive a notification to
 
 ---
 
-## 4. Out of scope for *this* MVP (per earlier product discussion)
+## 4. Relationship to click-level personalization analytics
 
-- **Click-level personalization / cart carrot analytics** — not derivable from REST alone; needs storefront events or separate instrumentation (different product).
-- **Commerce7 Admin iframe** — deliberate deferral; add App Extensions + `authenticate-app` later if CS requires in-Admin placement.
+The **REST + webhook** approach here covers **order/customer truth** and spreadsheet-style insights. **Click-level** “cart carrot” / personalization block metrics need a **browser collector** and usually a **Full Application** with **Report** extensions for in-Admin dashboards — see **`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`**.
+
+If the product is *only* personalization analytics, you still use Layer A (orders/webhooks) for **conversion proof**, but Layer B (storefront JS) is non-optional for **CTR / impressions**.
+
+## 5. Out of scope for *Insights-only* MVP (narrow definition)
+
+- **Commerce7 Admin iframe** — optional deferral if you ship standalone first; CS-facing reporting later via Full App + Report extensions.
 
 ---
 
-## 5. Doc index (mirrored in this repo)
+## 6. Doc index (mirrored in this repo)
 
 | Topic | Path |
 |--------|------|
