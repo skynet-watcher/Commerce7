@@ -6,7 +6,7 @@ Commerce7 work usually needs **HTTPS callbacks**, **webhooks** (HTTP + signature
 
 | Layer | Choice | Why |
 |--------|---------|-----|
-| **Runtime** | **Node.js 26** (Homebrew `/usr/local/bin/node`) | Ecosystem, JSON/HMAC, long-running server |
+| **Runtime** | **Node.js 20 LTS** (see root `.nvmrc`; **CI uses 20**) | Matches Next.js / Hono; **Node 22+** can emit `module.register()` deprecation noise during `next build` until upstream moves to `registerHooks` |
 | **Language** | **TypeScript** | Safer refactors across API + UI |
 | **Package manager** | **pnpm 10** workspaces | Fast installs, one lockfile |
 | **Application database** | **PostgreSQL** (required — see below) | Multi-tenant production, JSONB, migrations without SQLite→PG rewrite |
@@ -25,7 +25,7 @@ Commerce7 work usually needs **HTTPS callbacks**, **webhooks** (HTTP + signature
 ## Next.js version
 
 The **source of truth** is **`apps/web/package.json`** (and `pnpm-lock.yaml`).  
-This repo currently pins **Next 16.x** with **`eslint-config-next`** aligned to that release. As of **May 2026**, **Next.js 16** is the current stable major on npm (if an external audit predates that release, treat `package.json` as authoritative).  
+This repo currently pins **Next 16.x** with **`eslint-config-next`** aligned to that release. As of **May 2026**, **Next.js 16** is the current stable major on npm (if an external audit predates that release, treat `package.json` as authoritative). The **`web`** app’s `build` script sets `NODE_OPTIONS=--disable-warning=DEP0205` so Node **22+** / **26** don’t spam logs during `next build` (upstream loader migration). CI uses **Node 20**, where this is usually quiet either way.  
 When onboarding or auditing, run `pnpm --filter web exec node -e "console.log(require('next/package.json').version)"`.  
 Upgrade deliberately: `pnpm --filter web add next@<version> eslint-config-next@<version>` and re-run `pnpm build`.
 
@@ -40,7 +40,10 @@ pnpm dev:web          # Next.js → http://localhost:3000
 pnpm typecheck        # all workspaces that define typecheck
 pnpm build            # all packages that define build
 pnpm test             # when wired (see FULL-DEV-HANDOFF.md testing section)
+pnpm v1:pipeline      # typecheck → migrate (if DATABASE_URL*) → test → build
 ```
+
+\*If `TEST_DATABASE_URL` or `DATABASE_URL` is set, runs `pnpm --filter @commerce7/api db:migrate` first. See **`docs/V1-BUILD-SEQUENCE.md`**.
 
 Copy env template: `cp .env.example .env` and set `PORT=3001`, `DATABASE_URL`, and Commerce7 keys when you have them.
 
@@ -62,7 +65,7 @@ Until a dedicated `docker-compose.prod.yml` or IaC exists, assume:
 | **`apps/web`** | **Vercel** or same provider as API behind a path/hostname |
 | **Postgres** | Managed **RDS / Neon / Supabase / Crunchy** — not co-located on a single VM without backups |
 | **Secrets** | Provider secret store or **1Password / Doppler** — **never** production secrets only in `.env` on disk |
-| **CI** | **GitHub Actions**: `pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm build` on PR |
+| **CI** | **GitHub Actions** on **Node 20**: Postgres 16 service, `pnpm install`, `typecheck`, `test`, `build` (see `docs/V1-BUILD-SEQUENCE.md`) |
 
 Adjust per client infra; document changes in PR when this diverges.
 

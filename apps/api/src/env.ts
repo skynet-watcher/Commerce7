@@ -9,6 +9,7 @@ config({ path: process.env.DOTENV_CONFIG_PATH ?? resolve(repoRoot, ".env") });
 const schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3001),
+  DATABASE_URL: z.string().min(1).optional(),
   APP_BASE_URL: z.string().url().optional(),
   OAUTH_REDIRECT_URL: z.string().url().optional(),
   COMMERCE7_CLIENT_ID: z.string().optional(),

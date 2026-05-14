@@ -1,6 +1,9 @@
 {
   "name": "commerce7-monorepo",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "packageManager": "pnpm@10.11.0",
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver"]
@@ -11,6 +14,7 @@
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "v1:pipeline": "bash scripts/v1-pipeline.sh"
   }
 }

@@ -12,17 +12,17 @@ export type RecordWebhookResult =
   | { duplicate: true; receivedAt: string };
 
 export interface WebhookDeliveryStore {
-  recordDelivery(input: RecordWebhookInput): RecordWebhookResult;
+  recordDelivery(input: RecordWebhookInput): Promise<RecordWebhookResult>;
 }
 
-/** Development / test store. Replace with Postgres in a later milestone. */
+/** Development / test store. Use `PgWebhookDeliveryStore` when `DATABASE_URL` is set. */
 export class InMemoryWebhookDeliveryStore implements WebhookDeliveryStore {
   private readonly deliveries = new Map<
     string,
     { tenantId: string; rawBody: string; body: Commerce7WebhookBody; receivedAt: string }
   >();
 
-  recordDelivery(input: RecordWebhookInput): RecordWebhookResult {
+  async recordDelivery(input: RecordWebhookInput): Promise<RecordWebhookResult> {
     const existing = this.deliveries.get(input.idempotencyKey);
     if (existing) {
       return { duplicate: true, receivedAt: existing.receivedAt };

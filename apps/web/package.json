@@ -2,9 +2,12 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS=--disable-warning=DEP0205 next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

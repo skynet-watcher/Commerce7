@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "tsx src/db/migrate-cli.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -15,10 +16,12 @@
     "@hono/node-server": "^1.19.7",
     "dotenv": "^16.5.0",
     "hono": "^4.11.4",
+    "pg": "^8.14.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
+    "@types/pg": "^8.11.13",
     "tsx": "^4.21.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

@@ -7,7 +7,8 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Before a new project lands:** **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** (access, env, first hour). Capture requirements with **[`docs/PROJECT-BRIEF-TEMPLATE.md`](docs/PROJECT-BRIEF-TEMPLATE.md)**. Copy **[`.env.example`](.env.example)** to `.env` (gitignored) when you have credentials.
 
-**Stacks & tooling:** **[`docs/STACK.md`](docs/STACK.md)** — Node 26, pnpm, Hono API (`apps/api`), Next.js UI (`apps/web`), ngrok. Run **`pnpm install`** then **`pnpm dev`** / **`pnpm dev:web`**.
+- **DB (local):** `docker compose up -d` — Postgres 16 on port **5432** (see `docker-compose.yml`).
+- **V1 automation:** `pnpm v1:pipeline` — typecheck, optional migrate, test, build ([`docs/V1-BUILD-SEQUENCE.md`](docs/V1-BUILD-SEQUENCE.md)).
 
 **Onboarding:** **[`docs/FULL-DEV-HANDOFF.md`](docs/FULL-DEV-HANDOFF.md)** (full) · **[`HANDOFF.md`](HANDOFF.md)** (short).
 

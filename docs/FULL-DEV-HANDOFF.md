@@ -19,7 +19,8 @@ This file is the **single consolidated handoff** for engineers joining the proje
 | 6 | **`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`** | Click-level collector + Full App Admin reports |
 | 7 | [`docs/README.md`](README.md) | Index of mirrored Commerce7 guides |
 | 8 | [`docs/IMPLEMENTATION-LOG.md`](IMPLEMENTATION-LOG.md) | **What is built vs planned** (incremental checklist) |
-| 9 | [`docs/KICKOFF-TOMORROW.md`](KICKOFF-TOMORROW.md) | Access checklist |
+| 9 | [`docs/V1-BUILD-SEQUENCE.md`](V1-BUILD-SEQUENCE.md) | **CI + `pnpm v1:pipeline`** order, Postgres test DB, segment checklist |
+| 10 | [`docs/KICKOFF-TOMORROW.md`](KICKOFF-TOMORROW.md) | Access checklist |
 
 **Before coding:** copy [`.env.example`](../.env.example) → `.env` at repo root (never commit `.env`).
 
@@ -104,7 +105,7 @@ Phase C is **not** sequenced like A/B until the product explicitly commits to pe
 - **Unit / module tests:** **Vitest** in `apps/api` (`pnpm --filter @commerce7/api test`). Add tests alongside new modules (Zod parsers, idempotency helpers, sync cursor math).
 - **Integration:** exercise webhook + sync against **mock** client in Phase A; add HTTP-level tests against the running app when stable.
 - **Stress gates:** **T1–T11** in `docs/plans/V1-RISK-STRESS-TEST-PLAN.md` are **release criteria**, not a substitute for automated tests.
-- **CI:** `.github/workflows/ci.yml` runs install, **typecheck**, **test**, **build** on PRs; extend with web lint when the UI grows.
+- **CI:** `.github/workflows/ci.yml` — **Node 20**, **Postgres 16** service, `pnpm install`, **typecheck**, **test**, **build** on PRs; extend with web lint when the UI grows.
 
 ---
 
@@ -146,7 +147,7 @@ Fill tracker table **T1–T11** in that doc with owner, date, Pass/Fail, evidenc
 - **Remote:** `origin` → `https://github.com/skynet-watcher/Commerce7.git`
 - **Default branch:** `main` — `git clone`, then `git pull origin main` before new feature branches.
 - **Do not commit:** `.env`, `node_modules/**`, `apps/web/.next`
-- **Workflow:** feature branches + PRs into `main`; **CI** (`.github/workflows/ci.yml`) must pass: `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+- **Workflow:** feature branches + PRs into `main`; **CI** (`.github/workflows/ci.yml`) must pass: `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm test` (includes DB integration when `TEST_DATABASE_URL` is set), `pnpm build`.
 - Keep **`pnpm-lock.yaml`** in sync: run **`pnpm install`** locally after dependency changes; do not hand-edit the lockfile.
 
 ---

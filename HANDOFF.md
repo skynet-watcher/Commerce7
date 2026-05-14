@@ -48,7 +48,7 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 **Already implemented (minimal):**
 
 - API: `GET /health`, `GET /`, stub `GET /oauth/callback`.
-- API: **`POST /webhooks/commerce7`** — validates body (Zod), **idempotent** deliveries via `InMemoryWebhookDeliveryStore` (replace with Postgres later); see `apps/api/src/create-app.ts` + `webhook/*`.
+- API: **`POST /webhooks/commerce7`** — validates body (Zod), **idempotent** via **`InMemoryWebhookDeliveryStore`** (dev) or **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set; run `pnpm --filter @commerce7/api db:migrate` after changing SQL. Integration tests use **`TEST_DATABASE_URL`** (never truncate a shared prod DB).
 - Web: stock Next.js home page.
 
 **Not implemented yet (your work):**

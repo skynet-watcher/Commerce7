@@ -1,0 +1,15 @@
+# Local Postgres for V1 (webhooks, sync state, etc.)
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: commerce7
+      POSTGRES_PASSWORD: commerce7
+      POSTGRES_DB: commerce7_app_dev
+    volumes:
+      - commerce7-pg:/var/lib/postgresql/data
+
+volumes:
+  commerce7-pg:

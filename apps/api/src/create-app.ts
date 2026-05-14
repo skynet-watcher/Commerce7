@@ -36,7 +36,7 @@ export function createApp(options: CreateAppOptions): Hono {
 
   app.get("/", (c) =>
     c.json({
-      message: "Commerce7 integration API — OAuth stub + webhook ingestion (in-memory store).",
+      message: "Commerce7 integration API — OAuth stub + webhook ingestion (Postgres when DATABASE_URL is set; else in-memory in dev). See docs/IMPLEMENTATION-LOG.md.",
       docs: "See docs/EXECUTION-PLAYBOOK.md",
     }),
   );
@@ -71,7 +71,7 @@ export function createApp(options: CreateAppOptions): Hono {
     }
 
     const idempotencyKey = deriveWebhookIdempotencyKey(parsed.data);
-    const result = webhookStore.recordDelivery({
+    const result = await webhookStore.recordDelivery({
       idempotencyKey,
       tenantId: parsed.data.tenantId,
       rawBody: raw,
