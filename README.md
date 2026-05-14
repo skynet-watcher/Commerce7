@@ -10,6 +10,8 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 - **DB (local):** `docker compose up -d` — Postgres 16 on port **5432** (see `docker-compose.yml`).
 - **V1 automation:** `pnpm v1:pipeline` — typecheck, optional migrate, test, build ([`docs/V1-BUILD-SEQUENCE.md`](docs/V1-BUILD-SEQUENCE.md)).
 
+**Stacks & tooling:** **[`docs/STACK.md`](docs/STACK.md)** — Node 20+ (see `.nvmrc`), pnpm, Hono API, Next.js UI, ngrok. Run **`pnpm install`** then **`pnpm dev`** / **`pnpm dev:web`**.
+
 **Onboarding:** **[`docs/FULL-DEV-HANDOFF.md`](docs/FULL-DEV-HANDOFF.md)** (full) · **[`HANDOFF.md`](HANDOFF.md)** (short).
 
 **Incremental implementation status:** **[`docs/IMPLEMENTATION-LOG.md`](docs/IMPLEMENTATION-LOG.md)**.
