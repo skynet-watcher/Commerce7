@@ -6,7 +6,7 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 |---|-----------|--------|----------------|
 | 1 | **Webhook schema + idempotency** | Done | `webhook/schema.test.ts`, `idempotency.test.ts` |
 | 2 | **Webhook HTTP + dedupe store** | Done | `webhook/route.test.ts`, `pg-route.integration.test.ts` |
-| 3 | **Postgres persistence** (`webhook_deliveries`, `sync_state`, …) | Done | `db:migrate`, migrations `001`–`005` |
+| 3 | **Postgres persistence** (`webhook_deliveries`, `sync_state`, …) | Done | `db:migrate`, migrations `001`–`006` |
 | 4 | **Mock `Commerce7Client` + cursor sync** | Done | `c7/mock-client.test.ts`, `sync/run-order-sync.test.ts` |
 | 5 | **HTTP `Commerce7Client`** (Basic Auth + `tenant`, 429 backoff) | Done | `c7/http-client.test.ts`, `http/fetch-with-backoff.test.ts`, `c7/create-client.test.ts` |
 | 6 | **`synced_orders` + `OrderRefPersistence`** | Done | `sync/order-persistence.ts`, `run-order-sync` persist option |
@@ -16,8 +16,12 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 10 | **Optional webhook Basic Auth** (ADC Advanced) | Done | `webhook/basic-auth.ts`, `basic-auth-route.test.ts` |
 | 11 | **End-to-end smoke** | Done | `v1-chain.test.ts` |
 | 12 | **Postgres V1 integration** | Done | `pg-v1.integration.test.ts` (needs `TEST_DATABASE_URL`) |
+| 13 | **`POST /lifecycle/install` / `uninstall`** (ADC Install/Uninstall URL) | Done | `lifecycle/*`, `lifecycle-route.test.ts`, `pg-v1` |
+| 14 | **Optional internal Bearer** on sync / reconcile / analytics | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
 
-**Still not production-complete (see `HANDOFF.md`):** real OAuth **token exchange**, Commerce7-specific **webhook signing** (if not using Basic Auth), cron/broker for scheduled reconciliation, reporting UI.
+**Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, extension UI, richer merchant auth. **Note:** Commerce7 **server** API access uses **Basic Auth (app id + secret) + `tenant` header** after install — there is no separate OAuth **code→token** exchange for that path in the public docs; the `oauth_sessions` table remains useful for extension/JWT flows and future ADC features.
+
+**Still optional:** Commerce7-specific **webhook signing** beyond HTTP Basic (ADC “Advanced”).
 
 See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 
@@ -28,9 +32,11 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 | GET | `/health` | Liveness |
 | GET | `/oauth/callback` | Stores query stub when `oauth` store wired and `tenantId` present |
 | POST | `/webhooks/commerce7` | Commerce7 webhook envelope |
-| POST | `/sync/orders` | `{ tenantId }` — one Commerce7 cursor batch |
-| POST | `/reconcile/orders` | `{ tenantId }` — `synced_orders` count vs fresh API walk |
-| POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics |
+| POST | `/lifecycle/install` | Commerce7 **Install URL** — JSON or form body; `tenantId` + installer + client settings (passthrough `raw`) |
+| POST | `/lifecycle/uninstall` | Commerce7 **Uninstall URL** — `{ tenantId }` |
+| POST | `/sync/orders` | `{ tenantId }` — one Commerce7 cursor batch (`Authorization: Bearer` if `INTERNAL_API_TOKEN` set) |
+| POST | `/reconcile/orders` | `{ tenantId }` — `synced_orders` count vs fresh API walk (Bearer if configured) |
+| POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured) |
 
 ### Manual smoke (`POST /webhooks/commerce7`)
 

@@ -4,6 +4,7 @@ import { MockCommerce7Client } from "../c7/mock-client.js";
 import { createPool } from "../db/pool.js";
 import { runMigrations } from "../db/run-migrations.js";
 import { PgAnalyticsEventStore } from "../events/analytics-store.js";
+import { PgAppInstallStore } from "../lifecycle/install-store.js";
 import { analyticsEventBodySchema } from "../events/analytics-schema.js";
 import { PgOAuthSessionStore } from "../oauth/oauth-store.js";
 import { PgOrderRefPersistence } from "./order-persistence.js";
@@ -28,7 +29,7 @@ describe.skipIf(!testDbUrl)("Postgres V1 tables (integration)", () => {
 
   beforeEach(async () => {
     await pool.query(
-      `TRUNCATE analytics_events, oauth_sessions, synced_orders, sync_state, webhook_deliveries RESTART IDENTITY`,
+      `TRUNCATE app_installs, analytics_events, oauth_sessions, synced_orders, sync_state, webhook_deliveries RESTART IDENTITY`,
     );
   });
 
@@ -61,5 +62,18 @@ describe.skipIf(!testDbUrl)("Postgres V1 tables (integration)", () => {
     await runOrderSyncStep(client, syncState, tenant, { orderPersistence: orders });
     const rec = await reconcileSyncedOrders(client, orders, tenant);
     expect(rec.match).toBe(true);
+
+    const installs = new PgAppInstallStore(pool);
+    await installs.recordInstall({
+      tenantId: tenant,
+      installerEmail: "i@example.com",
+      installerFirstName: "I",
+      installerLastName: "U",
+      raw: { k: 1 },
+    });
+    const ins = await installs.getInstall(tenant);
+    expect(ins?.installerEmail).toBe("i@example.com");
+    await installs.recordUninstall(tenant);
+    expect((await installs.getInstall(tenant))?.uninstalledAt).not.toBeNull();
   });
 });

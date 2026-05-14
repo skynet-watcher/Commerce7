@@ -1,11 +1,19 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { z } from "zod";
 
+import { verifyInternalBearer } from "./auth/internal-bearer.js";
 import type { Commerce7Client } from "./c7/types.js";
 import type { Env } from "./env.js";
 import { analyticsEventBodySchema, type AnalyticsEventStore } from "./events/analytics-schema.js";
+import {
+  installBodySchema,
+  uninstallBodySchema,
+  type AppInstallWrite,
+} from "./lifecycle/install-schema.js";
+import type { AppInstallStore } from "./lifecycle/install-store.js";
+import { parseTypedPayload } from "./lifecycle/parse-payload.js";
 import type { OAuthSessionStore } from "./oauth/oauth-store.js";
 import { reconcileSyncedOrders } from "./sync/reconcile.js";
 import type { OrderRefPersistence } from "./sync/order-persistence.js";
@@ -23,11 +31,39 @@ const reconcileBodySchema = z.object({
   tenantId: z.string().min(1),
 });
 
+function denyUnlessInternalBearer(c: Context, token: string | undefined) {
+  if (!token) {
+    return undefined;
+  }
+  if (!verifyInternalBearer(token, c.req.header("Authorization"))) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+  return undefined;
+}
+
+function toInstallWrite(parsed: z.infer<typeof installBodySchema>): AppInstallWrite {
+  const { tenantId, firstName, lastName, email, ...rest } = parsed;
+  return {
+    tenantId,
+    installerFirstName: firstName ?? null,
+    installerLastName: lastName ?? null,
+    installerEmail: email && email !== "" ? email : null,
+    raw: rest,
+  };
+}
+
 export type CreateAppOptions = {
   env: Env;
   webhookStore: WebhookDeliveryStore;
   /** When both user + password set, webhook endpoint requires Basic auth. */
   webhookBasicAuth?: { user: string; password: string };
+  /** Commerce7 Install / Uninstall URL targets (ADC Step 4 Installation). */
+  lifecycle?: {
+    store: AppInstallStore;
+    basicAuth?: { user: string; password: string };
+  };
+  /** When set, `POST /sync/orders`, `/reconcile/orders`, and `/v1/events` require matching Bearer token. */
+  internalApiToken?: string;
   /** When set, exposes POST /sync/orders (Phase A/B — protect in production). */
   sync?: {
     client: Commerce7Client;
@@ -43,7 +79,8 @@ export type CreateAppOptions = {
 };
 
 export function createApp(options: CreateAppOptions): Hono {
-  const { env, webhookStore, sync, webhookBasicAuth, analytics, oauth } = options;
+  const { env, webhookStore, sync, webhookBasicAuth, analytics, oauth, lifecycle, internalApiToken } =
+    options;
   const app = new Hono();
 
   app.use("*", logger());
@@ -67,7 +104,7 @@ export function createApp(options: CreateAppOptions): Hono {
   app.get("/", (c) =>
     c.json({
       message:
-        "Commerce7 integration API — webhooks, sync, reconcile, analytics. See docs/IMPLEMENTATION-LOG.md.",
+        "Commerce7 integration API — webhooks, lifecycle, sync, reconcile, analytics. See docs/IMPLEMENTATION-LOG.md.",
       docs: "See docs/EXECUTION-PLAYBOOK.md",
     }),
   );
@@ -136,9 +173,62 @@ export function createApp(options: CreateAppOptions): Hono {
     });
   });
 
+  if (lifecycle?.store) {
+    const { store: installStore, basicAuth: lifecycleBasic } = lifecycle;
+    app.post("/lifecycle/install", async (c) => {
+      if (lifecycleBasic) {
+        const ok = verifyWebhookBasicAuth(c, lifecycleBasic.user, lifecycleBasic.password);
+        if (!ok) {
+          return c.json({ error: "unauthorized" }, 401);
+        }
+      }
+      const raw = await c.req.text();
+      if (raw.length > 65_536) {
+        return c.json({ error: "payload_too_large" }, 413);
+      }
+      const payload = parseTypedPayload(raw);
+      if (payload == null) {
+        return c.json({ error: "invalid_body" }, 400);
+      }
+      const parsed = installBodySchema.safeParse(payload);
+      if (!parsed.success) {
+        return c.json({ error: "validation_error", details: parsed.error.flatten() }, 400);
+      }
+      await installStore.recordInstall(toInstallWrite(parsed.data));
+      return c.json({ ok: true, tenantId: parsed.data.tenantId });
+    });
+
+    app.post("/lifecycle/uninstall", async (c) => {
+      if (lifecycleBasic) {
+        const ok = verifyWebhookBasicAuth(c, lifecycleBasic.user, lifecycleBasic.password);
+        if (!ok) {
+          return c.json({ error: "unauthorized" }, 401);
+        }
+      }
+      const raw = await c.req.text();
+      if (raw.length > 65_536) {
+        return c.json({ error: "payload_too_large" }, 413);
+      }
+      const payload = parseTypedPayload(raw);
+      if (payload == null) {
+        return c.json({ error: "invalid_body" }, 400);
+      }
+      const parsed = uninstallBodySchema.safeParse(payload);
+      if (!parsed.success) {
+        return c.json({ error: "validation_error", details: parsed.error.flatten() }, 400);
+      }
+      await installStore.recordUninstall(parsed.data.tenantId);
+      return c.json({ ok: true, tenantId: parsed.data.tenantId });
+    });
+  }
+
   if (analytics?.store) {
     const store = analytics.store;
     app.post("/v1/events", async (c) => {
+      const denied = denyUnlessInternalBearer(c, internalApiToken);
+      if (denied) {
+        return denied;
+      }
       const raw = await c.req.text();
       if (raw.length > 65_536) {
         return c.json({ error: "payload_too_large" }, 413);
@@ -166,6 +256,10 @@ export function createApp(options: CreateAppOptions): Hono {
   if (sync) {
     const { client: c7, syncState, orderPersistence } = sync;
     app.post("/sync/orders", async (c) => {
+      const denied = denyUnlessInternalBearer(c, internalApiToken);
+      if (denied) {
+        return denied;
+      }
       let body: unknown;
       try {
         body = await c.req.json();
@@ -191,6 +285,10 @@ export function createApp(options: CreateAppOptions): Hono {
     if (options.reconcileEnabled && sync.orderPersistence) {
       const persistence = sync.orderPersistence;
       app.post("/reconcile/orders", async (c) => {
+        const denied = denyUnlessInternalBearer(c, internalApiToken);
+        if (denied) {
+          return denied;
+        }
         let body: unknown;
         try {
           body = await c.req.json();

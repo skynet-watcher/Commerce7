@@ -4,13 +4,14 @@ import { MockCommerce7Client } from "./c7/mock-client.js";
 import { createApp } from "./create-app.js";
 import { loadEnv } from "./env.js";
 import { InMemoryAnalyticsEventStore } from "./events/analytics-store.js";
+import { InMemoryAppInstallStore } from "./lifecycle/install-store.js";
 import { InMemoryOAuthSessionStore } from "./oauth/oauth-store.js";
 import { InMemoryOrderRefPersistence } from "./sync/order-persistence.js";
 import { InMemorySyncStateStore } from "./sync/sync-state.js";
 import { InMemoryWebhookDeliveryStore } from "./webhook/store.js";
 
 /**
- * Cross-surface smoke: health → sync (persisted) → reconcile → analytics → oauth → webhooks.
+ * Cross-surface smoke: health → lifecycle → sync (persisted) → reconcile → analytics → oauth → webhooks.
  */
 describe("V1 interconnection (in-memory)", () => {
   it("full Phase-A style path", async () => {
@@ -19,6 +20,7 @@ describe("V1 interconnection (in-memory)", () => {
     const orderPersistence = new InMemoryOrderRefPersistence();
     const analyticsStore = new InMemoryAnalyticsEventStore();
     const oauthStore = new InMemoryOAuthSessionStore();
+    const installStore = new InMemoryAppInstallStore();
     const env = loadEnv();
     const tenant = "v1-tenant-chain";
 
@@ -33,10 +35,24 @@ describe("V1 interconnection (in-memory)", () => {
       reconcileEnabled: true,
       analytics: { store: analyticsStore },
       oauth: { store: oauthStore },
+      lifecycle: { store: installStore },
     });
 
     const health = await app.request("http://localhost/health");
     expect(health.status).toBe(200);
+
+    const life = await app.request("http://localhost/lifecycle/install", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId: tenant,
+        firstName: "R",
+        lastName: "L",
+        email: "r@example.com",
+      }),
+    });
+    expect(life.status).toBe(200);
+    expect((await installStore.getInstall(tenant))?.uninstalledAt).toBeNull();
 
     const syncBody = { tenantId: tenant };
     const sy1 = await app.request("http://localhost/sync/orders", {

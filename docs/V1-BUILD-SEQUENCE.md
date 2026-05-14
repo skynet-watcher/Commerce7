@@ -17,7 +17,7 @@ This runs (see `scripts/v1-pipeline.sh`):
 3. **`pnpm test`** — includes Postgres integration tests when **`TEST_DATABASE_URL`** is set (same pattern as CI).  
 4. **`pnpm build`**.
 
-**CI** (`.github/workflows/ci.yml`) mirrors this on **Node 20** with a **Postgres 16** service and **`TEST_DATABASE_URL`** so **webhook**, **`sync_state`**, **`synced_orders`**, **`analytics_events`**, and **`oauth_sessions`** integration tests can run every PR.
+**CI** (`.github/workflows/ci.yml`) mirrors this on **Node 20** with a **Postgres 16** service and **`TEST_DATABASE_URL`** so **webhook**, **`sync_state`**, **`synced_orders`**, **`analytics_events`**, **`oauth_sessions`**, and **`app_installs`** integration tests can run every PR.
 
 ## Segment order (see also `docs/IMPLEMENTATION-LOG.md`)
 
@@ -32,7 +32,9 @@ This runs (see `scripts/v1-pipeline.sh`):
 | 7 | `POST /v1/events` | `events-route.test.ts`, `v1-chain` |
 | 8 | OAuth stub + `oauth_sessions` | `oauth-route.test.ts`, `v1-chain` |
 | 9 | Webhook optional Basic Auth | `basic-auth-route.test.ts` |
-| *Next (prod hardening)* | Token exchange, signing, scheduled jobs, authz on internal routes | — |
+| 10 | Install/Uninstall lifecycle + `app_installs` | `lifecycle-route.test.ts`, `v1-chain` |
+| 11 | Internal Bearer on sync / reconcile / events | `internal-auth-route.test.ts` |
+| *Next (prod hardening)* | Scheduled jobs, Admin JWT verification, webhook signing | — |
 
 ## Local Postgres (optional)
 

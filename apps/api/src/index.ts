@@ -8,12 +8,23 @@ import { runMigrations } from "./db/run-migrations.js";
 import type { AnalyticsEventStore } from "./events/analytics-schema.js";
 import { InMemoryAnalyticsEventStore, PgAnalyticsEventStore } from "./events/analytics-store.js";
 import { loadEnv, type Env } from "./env.js";
+import { InMemoryAppInstallStore, PgAppInstallStore, type AppInstallStore } from "./lifecycle/install-store.js";
 import { InMemoryOAuthSessionStore, PgOAuthSessionStore, type OAuthSessionStore } from "./oauth/oauth-store.js";
 import { InMemoryOrderRefPersistence, PgOrderRefPersistence } from "./sync/order-persistence.js";
 import { InMemorySyncStateStore, PgSyncStateStore, type SyncStateStore } from "./sync/sync-state.js";
 import { PgWebhookDeliveryStore } from "./webhook/pg-store.js";
 import { InMemoryWebhookDeliveryStore } from "./webhook/store.js";
 import type { WebhookDeliveryStore } from "./webhook/store.js";
+
+function createAppInstallStore(env: Env, pool: Pool | undefined): AppInstallStore {
+  if (pool) {
+    return new PgAppInstallStore(pool);
+  }
+  if (env.NODE_ENV === "production") {
+    throw new Error("DATABASE_URL is required when NODE_ENV=production");
+  }
+  return new InMemoryAppInstallStore();
+}
 
 function createWebhookStore(env: Env, pool: Pool | undefined): WebhookDeliveryStore {
   if (pool) {
@@ -81,6 +92,7 @@ const syncStateStore = createSyncStateStore(env, pool);
 const orderPersistence = createOrderPersistence(env, pool);
 const analyticsStore = createAnalyticsStore(env, pool);
 const oauthStore = createOAuthStore(env, pool);
+const appInstallStore = createAppInstallStore(env, pool);
 const commerce7Client = createCommerce7Client(env);
 
 const webhookBasicAuth =
@@ -88,10 +100,17 @@ const webhookBasicAuth =
     ? { user: env.WEBHOOK_BASIC_USER, password: env.WEBHOOK_BASIC_PASSWORD }
     : undefined;
 
+const lifecycleBasicAuth =
+  env.LIFECYCLE_BASIC_USER && env.LIFECYCLE_BASIC_PASSWORD
+    ? { user: env.LIFECYCLE_BASIC_USER, password: env.LIFECYCLE_BASIC_PASSWORD }
+    : undefined;
+
 const app = createApp({
   env,
   webhookStore,
   webhookBasicAuth,
+  internalApiToken: env.INTERNAL_API_TOKEN,
+  lifecycle: { store: appInstallStore, basicAuth: lifecycleBasicAuth },
   sync: {
     client: commerce7Client,
     syncState: syncStateStore,

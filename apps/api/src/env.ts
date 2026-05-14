@@ -21,12 +21,23 @@ const schema = z
     /** When set, `POST /webhooks/commerce7` requires matching `Authorization: Basic …` (ADC Advanced webhook auth). */
     WEBHOOK_BASIC_USER: z.string().optional(),
     WEBHOOK_BASIC_PASSWORD: z.string().optional(),
+    /** When set, `POST /sync/orders`, `/reconcile/orders`, and `/v1/events` require `Authorization: Bearer …`. */
+    INTERNAL_API_TOKEN: z.string().min(1).optional(),
+    /** When both set, `POST /lifecycle/*` requires matching `Authorization: Basic …` (ADC Installation security). */
+    LIFECYCLE_BASIC_USER: z.string().optional(),
+    LIFECYCLE_BASIC_PASSWORD: z.string().optional(),
   })
   .refine(
     (e) =>
       (Boolean(e.WEBHOOK_BASIC_USER) && Boolean(e.WEBHOOK_BASIC_PASSWORD)) ||
       (!e.WEBHOOK_BASIC_USER && !e.WEBHOOK_BASIC_PASSWORD),
     { message: "Set both WEBHOOK_BASIC_USER and WEBHOOK_BASIC_PASSWORD (or neither)" },
+  )
+  .refine(
+    (e) =>
+      (Boolean(e.LIFECYCLE_BASIC_USER) && Boolean(e.LIFECYCLE_BASIC_PASSWORD)) ||
+      (!e.LIFECYCLE_BASIC_USER && !e.LIFECYCLE_BASIC_PASSWORD),
+    { message: "Set both LIFECYCLE_BASIC_USER and LIFECYCLE_BASIC_PASSWORD (or neither)" },
   );
 
 export type Env = z.infer<typeof schema>;
