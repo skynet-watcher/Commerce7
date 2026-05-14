@@ -13,6 +13,7 @@ Do these **before** or **as soon as** the project is assigned so you are not blo
 - [ ] **Refresh mirrored docs** (optional but quick):  
   `python3 -m pip install -r requirements-docs.txt && python3 scripts/fetch_docs.py`
 - [ ] **Copy** [`PROJECT-BRIEF-TEMPLATE.md`](PROJECT-BRIEF-TEMPLATE.md) and start filling during the kickoff call.
+- [ ] **If sandbox is blocked** — read **`docs/EXECUTION-PLAYBOOK.md`** §3 and **`HANDOFF.md`** *Progress without Commerce7 sandbox*; use mocks and non-C7 work until ADC access exists.
 - [ ] **Read** [`HANDOFF.md`](../HANDOFF.md) for full developer onboarding.
 - [ ] **Read** [`EXECUTION-PLAYBOOK.md`](EXECUTION-PLAYBOOK.md) once so the phases are fresh.
 

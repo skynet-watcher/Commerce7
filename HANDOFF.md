@@ -43,6 +43,31 @@ Background reading for ordering work: **`docs/EXECUTION-PLAYBOOK.md`**.
 
 ---
 
+## Progress without Commerce7 sandbox
+
+If **sandbox, tenant, or App Development Center access** is not available yet, you are **not stuck**. Expect roughly **40–60% of engineering** to still move if the product brief is clear.
+
+**You can still do:**
+
+- **Spec and mapping** — Fill **`docs/PROJECT-BRIEF-TEMPLATE.md`**, complete **`docs/EXECUTION-PLAYBOOK.md`** §0–§1 using mirrored guides under **`docs/developer/`** and **`docs/README.md`**.
+- **Repo and infra** — Dependencies, logging, DB schema, deployment skeleton, error handling, config validation (`apps/api` / `apps/web`).
+- **Non-Commerce7 integrations** — Any third-party APIs, internal services, batch logic; unit tests with fixtures.
+- **OAuth plumbing** — Routes, state/CSRF, session storage, redirects — with **mocked** token responses until real Commerce7 OAuth is available.
+- **Webhook plumbing** — HTTP handler, parsing, idempotency, queues — using **fake payloads** or samples from docs; final **signature verification** needs real ADC secrets.
+- **Extension UI** — Build **`apps/web`** against **mock** tenant/user/JWT context; swap in real Commerce7 context once installs work.
+
+**You cannot complete without access:**
+
+- ADC app setup, redirect URLs, API permissions, webhook subscriptions, **test installs**.
+- **Real** OAuth token exchange and **authenticated** `api.commerce7.com` calls.
+- **Production-accurate** webhook signing verification and end-to-end “event in C7 → your app → side effect” validation.
+
+**Suggested no-access sequence:** own your data model and core workflows first; put Commerce7 behind a **small client interface** (e.g. `Commerce7Client`) and implement a **mock adapter** for local dev. Unblock the team with a flag such as `COMMERCE7_MOCK=1` if useful.
+
+More detail: **`docs/EXECUTION-PLAYBOOK.md`** — **§3 When sandbox access is delayed**.
+
+---
+
 ## 4. Machine setup
 
 ### Required

@@ -50,7 +50,34 @@ Do this **before** writing significant backend code so you do not rework auth an
 
 ---
 
-## 3. Recommended build order
+## 3. When sandbox access is delayed
+
+You can keep the project moving **before** Commerce7 sandbox, tenant, or ADC access exists.
+
+**Safe to advance (~40–60% of typical effort if the brief is solid):**
+
+| Area | What to do |
+|------|------------|
+| **Spec** | Finish §0–§1 in this playbook; use [PROJECT-BRIEF-TEMPLATE.md](PROJECT-BRIEF-TEMPLATE.md). |
+| **Your stack** | DB, jobs, logging, `apps/api` / `apps/web` structure, CI, deployment stubs. |
+| **Other systems** | Any non–Commerce7 APIs and domain logic — test with fixtures. |
+| **OAuth shape** | Callback route, state, cookie/session — unit test with **mocked** token responses. |
+| **Webhooks shape** | POST handler, idempotency, queue — use synthetic JSON; finalize **HMAC/signature** checks when ADC provides secrets. |
+| **Admin UI** | Pages and components with **mock** tenant/user context. |
+
+**Blocked until access exists:**
+
+- ADC: app, redirect URLs, scopes, webhook subscriptions, **test installs**.
+- **Real** OAuth exchange and live **API** calls to `api.commerce7.com`.
+- **End-to-end** validation of webhooks from Commerce7.
+
+**Pattern:** Define a narrow **`Commerce7Client`** (or port interface) + **mock implementation** for local development; swap in HTTP + real auth once credentials land. Optional env flag e.g. `COMMERCE7_MOCK=1`.
+
+See also **[`HANDOFF.md`](../HANDOFF.md)** — *Progress without Commerce7 sandbox*.
+
+---
+
+## 4. Recommended build order
 
 Order minimizes blocked time (auth and tenancy first; fancy UI last).
 
@@ -64,7 +91,7 @@ Order minimizes blocked time (auth and tenancy first; fancy UI last).
 
 ---
 
-## 4. Validate before “done”
+## 5. Validate before “done”
 
 - [ ] **Test mode** with a real sandbox install — [developer/app-platform/test-your-app.md](developer/app-platform/test-your-app.md).
 - [ ] Webhook delivery in staging (replay / dead-letter strategy).
@@ -72,7 +99,7 @@ Order minimizes blocked time (auth and tenancy first; fancy UI last).
 
 ---
 
-## 5. One-line “definition of done” per phase
+## 6. One-line “definition of done” per phase
 
 | Phase | Done when |
 |------|-----------|
