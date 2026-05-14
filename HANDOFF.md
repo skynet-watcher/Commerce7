@@ -49,11 +49,12 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 
 - API: `GET /health`, `GET /`, stub `GET /oauth/callback`.
 - API: **`POST /webhooks/commerce7`** — validates body (Zod), **idempotent** via **`InMemoryWebhookDeliveryStore`** (dev) or **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set; run `pnpm --filter @commerce7/api db:migrate` after changing SQL. Integration tests use **`TEST_DATABASE_URL`** (never truncate a shared prod DB).
+- API: **`POST /sync/orders`** — advances **Commerce7-style cursor** sync one batch per request using **`MockCommerce7Client`** and **`sync_state`** (Postgres or in-memory like webhooks). Replace the client with a real HTTP implementation in Phase B.
 - Web: stock Next.js home page.
 
 **Not implemented yet (your work):**
 
-- Real Commerce7 OAuth / token storage, webhook signature verification, tenant model, business logic, database, and extension UI as required by the brief.
+- Real **HTTP `Commerce7Client`** (Basic Auth + `tenant` header), OAuth / token storage, webhook **signature** verification, reconciliation job, and extension UI as required by the brief.
 
 Background reading for ordering work: **`docs/EXECUTION-PLAYBOOK.md`**.
 

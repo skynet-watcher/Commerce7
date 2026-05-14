@@ -17,7 +17,7 @@ This runs (see `scripts/v1-pipeline.sh`):
 3. **`pnpm test`** — includes Postgres integration tests when **`TEST_DATABASE_URL`** is set (same pattern as CI).  
 4. **`pnpm build`**.
 
-**CI** (`.github/workflows/ci.yml`) mirrors this on **Node 20** with a **Postgres 16** service and **`TEST_DATABASE_URL`** set so webhook persistence tests run every PR.
+**CI** (`.github/workflows/ci.yml`) mirrors this on **Node 20** with a **Postgres 16** service and **`TEST_DATABASE_URL`** set so **webhook** and **`sync_state`** integration tests run every PR.
 
 ## Segment order (see also `docs/IMPLEMENTATION-LOG.md`)
 
@@ -25,8 +25,9 @@ This runs (see `scripts/v1-pipeline.sh`):
 |-------|-------------|------------------------|
 | 1 | Webhook Zod schema + idempotency | Unit tests only |
 | 2 | `POST /webhooks/commerce7` + in-memory dedupe | `src/v1-chain.test.ts` + route tests |
-| 3 | `webhook_deliveries` table + `PgWebhookDeliveryStore` | `pg-route.integration.test.ts` + `v1-chain` (memory path always on) |
-| *Next* | `Commerce7Client` mock + sync cursor | TBD |
+| 3 | `webhook_deliveries` table + `PgWebhookDeliveryStore` | `pg-route.integration.test.ts` + `v1-chain` |
+| 4 | **`Commerce7Client` + `MockCommerce7Client` + `sync_state` + `POST /sync/orders`** | Extended `v1-chain.test.ts`, `sync/*.test.ts`, `pg-sync-state.integration.test.ts` |
+| *Next* | HTTP `Commerce7Client` (Basic Auth + `tenant`) + sandbox | Phase B |
 
 ## Local Postgres (optional)
 

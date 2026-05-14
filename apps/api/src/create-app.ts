@@ -1,19 +1,31 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { z } from "zod";
 
+import type { Commerce7Client } from "./c7/types.js";
 import type { Env } from "./env.js";
+import { runOrderSyncStep, type SyncStateStore } from "./sync/sync-state.js";
 import { deriveWebhookIdempotencyKey } from "./webhook/idempotency.js";
 import { commerce7WebhookBodySchema } from "./webhook/schema.js";
 import type { WebhookDeliveryStore } from "./webhook/store.js";
 
+const syncOrdersBodySchema = z.object({
+  tenantId: z.string().min(1),
+});
+
 export type CreateAppOptions = {
   env: Env;
   webhookStore: WebhookDeliveryStore;
+  /** When set, exposes POST /sync/orders (Phase A; protect before production). */
+  sync?: {
+    client: Commerce7Client;
+    syncState: SyncStateStore;
+  };
 };
 
 export function createApp(options: CreateAppOptions): Hono {
-  const { env, webhookStore } = options;
+  const { env, webhookStore, sync } = options;
   const app = new Hono();
 
   app.use("*", logger());
@@ -36,7 +48,8 @@ export function createApp(options: CreateAppOptions): Hono {
 
   app.get("/", (c) =>
     c.json({
-      message: "Commerce7 integration API — OAuth stub + webhook ingestion (Postgres when DATABASE_URL is set; else in-memory in dev). See docs/IMPLEMENTATION-LOG.md.",
+      message:
+        "Commerce7 integration API — webhooks + mock order sync (POST /sync/orders). See docs/IMPLEMENTATION-LOG.md.",
       docs: "See docs/EXECUTION-PLAYBOOK.md",
     }),
   );
@@ -85,6 +98,30 @@ export function createApp(options: CreateAppOptions): Hono {
       receivedAt: result.receivedAt,
     });
   });
+
+  if (sync) {
+    const { client: c7, syncState } = sync;
+    app.post("/sync/orders", async (c) => {
+      let body: unknown;
+      try {
+        body = await c.req.json();
+      } catch {
+        return c.json({ error: "invalid_json" }, 400);
+      }
+      const parsed = syncOrdersBodySchema.safeParse(body);
+      if (!parsed.success) {
+        return c.json(
+          {
+            error: "validation_error",
+            details: parsed.error.flatten(),
+          },
+          400,
+        );
+      }
+      const result = await runOrderSyncStep(c7, syncState, parsed.data.tenantId);
+      return c.json({ ok: true, tenantId: parsed.data.tenantId, ...result });
+    });
+  }
 
   return app;
 }
