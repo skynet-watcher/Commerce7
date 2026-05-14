@@ -5,6 +5,8 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Execution:** When you know what app you are building, start with **[`docs/EXECUTION-PLAYBOOK.md`](docs/EXECUTION-PLAYBOOK.md)** — phased checklist from spec → ADC → build order → validation.
 
+**Before a new project lands:** **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** (access, env, first hour). Capture requirements with **[`docs/PROJECT-BRIEF-TEMPLATE.md`](docs/PROJECT-BRIEF-TEMPLATE.md)**. Copy **`/.env.example`** to `.env` (gitignored) when you have credentials.
+
 ## Commerce7 documentation (offline mirror)
 
 Guide pages from the developer hub are mirrored under **`docs/developer/`** by
