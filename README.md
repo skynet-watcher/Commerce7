@@ -5,7 +5,9 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 **Execution:** When you know what app you are building, start with **[`docs/EXECUTION-PLAYBOOK.md`](docs/EXECUTION-PLAYBOOK.md)** — phased checklist from spec → ADC → build order → validation.
 
-**Before a new project lands:** **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** (access, env, first hour). Capture requirements with **[`docs/PROJECT-BRIEF-TEMPLATE.md`](docs/PROJECT-BRIEF-TEMPLATE.md)**. Copy **`/.env.example`** to `.env` (gitignored) when you have credentials.
+**Before a new project lands:** **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** (access, env, first hour). Capture requirements with **[`docs/PROJECT-BRIEF-TEMPLATE.md`](docs/PROJECT-BRIEF-TEMPLATE.md)**. Copy **[`.env.example`](.env.example)** to `.env` (gitignored) when you have credentials.
+
+**Stacks & tooling:** **[`docs/STACK.md`](docs/STACK.md)** — Node 26, pnpm, Hono API (`apps/api`), Next.js UI (`apps/web`), ngrok. Run **`pnpm install`** then **`pnpm dev`** / **`pnpm dev:web`**.
 
 ## Commerce7 documentation (offline mirror)
 
@@ -24,28 +26,21 @@ source of truth.
 
 ## Next steps for your plugin
 
-1. Request or use a Commerce7 sandbox (see developer docs).
-2. Create an app in the App Development Center; configure APIs, webhooks, and
+1. **Tooling:** `export PATH="/usr/local/bin:$PATH"` then `pnpm install` (see **`docs/STACK.md`**).
+2. Request or use a Commerce7 sandbox (see developer docs).
+3. Create an app in the App Development Center; configure APIs, webhooks, and
    extension surfaces you need.
-3. Implement OAuth / app authentication per
-   [`docs/developer/app-platform/authenticate-app.md`](docs/developer/app-platform/authenticate-app.md)
-   (mirrored from the upstream guide).
-4. Add your application code (this repo is intentionally minimal until you pick
-   a stack).
+4. Implement OAuth / app authentication in **`apps/api`** per
+   [`docs/developer/app-platform/authenticate-app.md`](docs/developer/app-platform/authenticate-app.md).
+5. Add or adjust **`apps/web`** for any Admin extension UI.
 
-## Publish to GitHub
+## GitHub
 
-This folder is a git repository on your machine at `/Users/eric/commerce7-plugin`.
-The GitHub CLI (`gh`) is installed here, but you are not logged in yet. To create
-the repo under your account and push:
+Remote **`origin`** points at **[skynet-watcher/Commerce7](https://github.com/skynet-watcher/Commerce7)**. After local commits:
 
 ```bash
-gh auth login
-cd /Users/eric/commerce7-plugin
-gh repo create commerce7-plugin --public --source=. --remote=origin --push
+git push origin main
 ```
-
-Use another name instead of `commerce7-plugin` if you prefer. If the remote already exists, run `git remote remove origin` first or pass a different remote name.
 
 ## License
 

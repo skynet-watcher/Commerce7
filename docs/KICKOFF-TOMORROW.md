@@ -17,9 +17,9 @@ Do these **before** or **as soon as** the project is assigned so you are not blo
 
 ## Local machine
 
-- [ ] **Runtime** you expect (Node LTS, Python 3.11+, etc.) installed or installable in minutes.
-- [ ] **HTTPS URL for local dev** if the app uses OAuth — e.g. [ngrok](https://ngrok.com/) or Cloudflare Tunnel; ADC will need the callback URL.
-- [ ] **`cp .env.example .env`** — leave values empty until you have ADC credentials.
+- [ ] **Node & pnpm** — Homebrew Node first on `PATH` (`export PATH="/usr/local/bin:$PATH"`), then `pnpm install`. See [`STACK.md`](STACK.md).
+- [ ] **ngrok** — `ngrok version` (optional: `ngrok config add-authtoken …` from your ngrok dashboard).
+- [ ] **`cp .env.example .env`** — set `PORT` / URLs when you know tunnel + ADC redirect.
 
 ## First hour when the project lands
 

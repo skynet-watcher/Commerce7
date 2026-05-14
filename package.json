@@ -1,0 +1,15 @@
+{
+  "name": "commerce7-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver"]
+  },
+  "scripts": {
+    "dev": "pnpm --filter @commerce7/api dev",
+    "dev:api": "pnpm --filter @commerce7/api dev",
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
