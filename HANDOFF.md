@@ -2,6 +2,19 @@
 
 This document orients a new engineer on **what exists today**, **how to run it**, and **sensible next steps**. Treat the live Commerce7 developer site as canonical; local copies are for speed and search.
 
+### Team: read in this order
+
+1. **[`HANDOFF.md`](HANDOFF.md)** (this file) — setup, commands, risks overview  
+2. **[`docs/STACK.md`](docs/STACK.md)** — Node, pnpm, `apps/api` / `apps/web`  
+3. **[`docs/EXECUTION-PLAYBOOK.md`](docs/EXECUTION-PLAYBOOK.md)** — spec → ADC → build order  
+4. **[`docs/plans/V1-RISK-STRESS-TEST-PLAN.md`](docs/plans/V1-RISK-STRESS-TEST-PLAN.md)** — **V1: stress-test each function; tracker T1–T11; kill criteria**  
+5. **[`docs/plans/CUSTOMER-INSIGHTS-MVP.md`](docs/plans/CUSTOMER-INSIGHTS-MVP.md)** — API-backed insights baseline  
+6. **[`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`](docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md)** — storefront collector + Full App reports  
+7. **[`docs/README.md`](docs/README.md)** — mirrored Commerce7 guides index  
+8. **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** — access / first hour  
+
+`main` on GitHub should always contain these; **clone/pull before starting**.
+
 ---
 
 ## 1. Repository
