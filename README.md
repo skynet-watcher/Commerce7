@@ -5,8 +5,10 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 
 ## Commerce7 documentation (offline mirror)
 
-Guide pages from the developer hub are mirrored under `docs/mirror/` as Markdown.
-Regenerate them with:
+Guide pages from the developer hub are mirrored under **`docs/developer/`** by
+topic, with a generated index at **[`docs/README.md`](docs/README.md)**.
+
+Regenerate with:
 
 ```bash
 python3 -m pip install -r requirements-docs.txt
@@ -21,8 +23,9 @@ source of truth.
 1. Request or use a Commerce7 sandbox (see developer docs).
 2. Create an app in the App Development Center; configure APIs, webhooks, and
    extension surfaces you need.
-3. Implement OAuth / app authentication per `docs/mirror/authenticate-app.md`
-   (from the upstream guide).
+3. Implement OAuth / app authentication per
+   [`docs/developer/app-platform/authenticate-app.md`](docs/developer/app-platform/authenticate-app.md)
+   (mirrored from the upstream guide).
 4. Add your application code (this repo is intentionally minimal until you pick
    a stack).
 
