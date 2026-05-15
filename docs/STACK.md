@@ -37,11 +37,14 @@ From the repo root (use Homebrew Node: `export PATH="/usr/local/bin:$PATH"` if y
 pnpm install          # after clone or dependency changes
 pnpm dev              # API only → http://localhost:3001
 pnpm dev:web          # Next.js → http://localhost:3000
+pnpm dev:all          # API + Integration console UI (parallel)
 pnpm typecheck        # all workspaces that define typecheck
 pnpm build            # all packages that define build
 pnpm test             # when wired (see FULL-DEV-HANDOFF.md testing section)
 pnpm v1:pipeline      # typecheck → migrate (if DATABASE_URL*) → test → build
 ```
+
+**Sandbox day:** [`SANDBOX-TOMORROW.md`](SANDBOX-TOMORROW.md) — tunnels, `NEXT_PUBLIC_API_URL`, ADC extension URL.
 
 \*If `TEST_DATABASE_URL` or `DATABASE_URL` is set, runs `pnpm --filter @commerce7/api db:migrate` first. See **`docs/V1-BUILD-SEQUENCE.md`**.
 

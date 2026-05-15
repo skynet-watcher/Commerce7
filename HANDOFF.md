@@ -55,7 +55,7 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 - API: **`POST /v1/events`** — idempotent analytics sink (**`tenantId` + `clientEventId`**, 64KB max); optional **`INTERNAL_API_TOKEN`** Bearer gate.
 - API: **`GET /v1/account/user`** — proxies Commerce7 **[GET /account/user](https://developer.commerce7.com/docs/authenticate-app)** for Admin extension **`account`** (or storefront **`appToken`**) JWT validation. Query **`tenantId`**, header **`Authorization`** = token string from Commerce7 (often **raw JWT**, not necessarily `Bearer …`). **Not** gated by **`INTERNAL_API_TOKEN`**. Requires **`sync`** client (same as other C7 routes in this app).
 - API: **`POST /lifecycle/install`** and **`POST /lifecycle/uninstall`** — targets for Commerce7 ADC **Install URL** / **Uninstall URL** (JSON or form body); persisted in **`app_installs`**. Optional **`LIFECYCLE_BASIC_USER`** + **`LIFECYCLE_BASIC_PASSWORD`** (ADC Installation security).
-- Web: stock Next.js home page. End-to-end API smoke: **`apps/api/src/smoke/v1-chain.test.ts`**.
+- Web: **Next.js Integration console** at **`apps/web`** (`/` and **`/app`**) — exercise health, extension JWT validation, sync/reconcile (with operator token), webhooks. See **`docs/SANDBOX-TOMORROW.md`**. Run **`pnpm dev:all`**. Local env: **`apps/web/.env.example`**.
 
 **Not production-complete (next):**
 

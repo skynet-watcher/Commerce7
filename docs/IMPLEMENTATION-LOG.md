@@ -20,6 +20,7 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 14 | **Optional internal Bearer** on sync / reconcile / analytics / **app-sync** | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
 | 15 | **`POST /v1/app-sync`** (push status to Commerce7 Admin on an object) | Done | `c7/app-sync-schema.ts`, `http-client.ts`, `app-sync-route.test.ts`, `v1-chain` |
 | 16 | **`GET /v1/account/user`** (proxy extension `account` / `appToken` JWT) | Done | `account-user-route.test.ts`, `http-client.test.ts`, `v1-chain` |
+| 17 | **Integration console UI** (`apps/web`, `/` + `/app`) | Done | Manual sandbox QA — [`SANDBOX-TOMORROW.md`](SANDBOX-TOMORROW.md) |
 
 **Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, hardened extension UI (CSP, etc.). Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
 

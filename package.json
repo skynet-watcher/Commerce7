@@ -12,6 +12,7 @@
     "dev": "pnpm --filter @commerce7/api dev",
     "dev:api": "pnpm --filter @commerce7/api dev",
     "dev:web": "pnpm --filter web dev",
+    "dev:all": "pnpm -F @commerce7/api -F web --parallel dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --if-present test",

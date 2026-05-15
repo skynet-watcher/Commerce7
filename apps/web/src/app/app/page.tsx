@@ -10,7 +10,8 @@ function Fallback() {
   );
 }
 
-export default function Home() {
+/** Same as `/` — point ADC “extension URL” at `…/app` if you prefer a dedicated path. */
+export default function AppExtensionEntry() {
   return (
     <Suspense fallback={<Fallback />}>
       <IntegrationConsole />
