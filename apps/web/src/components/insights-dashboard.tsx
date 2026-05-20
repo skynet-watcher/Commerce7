@@ -205,7 +205,7 @@ function plural(value: number, singular: string, pluralWord = `${singular}s`): s
 function InfoHint(props: { text: string }) {
   return (
     <span
-      className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#b9c6cf] align-middle text-[10px] font-bold leading-none text-[#64727d]"
+      className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-[var(--c-border)] align-middle text-[10px] font-bold leading-none text-[var(--c-text-label)]"
       title={props.text}
       aria-label={props.text}
     >
@@ -224,27 +224,27 @@ function MetricCard(props: {
   return (
     <div
       className={[
-        "border bg-white p-4 shadow-sm",
-        props.active ? "border-[#0b7fab]" : "border-[#d5dee5]",
+        "border bg-[var(--c-bg-card)] p-4 shadow-sm",
+        props.active ? "border-[var(--c-brand)]" : "border-[var(--c-border)]",
       ].join(" ")}
     >
-      <p className="text-[11px] font-bold uppercase tracking-wide text-[#64727d]">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--c-text-label)]">
         {props.label}
         <InfoHint text={props.explainer} />
       </p>
-      <p className="mt-3 text-3xl font-bold leading-none text-[#26343d]">{props.value}</p>
-      <p className="mt-4 min-h-10 text-sm leading-5 text-[#657481]">{props.detail}</p>
+      <p className="mt-3 text-3xl font-bold leading-none text-[var(--c-text-primary)]">{props.value}</p>
+      <p className="mt-4 min-h-10 text-sm leading-5 text-[var(--c-text-secondary)]">{props.detail}</p>
     </div>
   );
 }
 
 function EmptyState(props: { hasTenant: boolean }) {
   return (
-    <section className="border border-dashed border-[#cfd9e0] bg-white p-8 text-center">
-      <h2 className="text-lg font-bold text-[#26343d]">
+    <section className="border border-dashed border-[var(--c-border-subtle)] bg-[var(--c-bg-card)] p-8 text-center">
+      <h2 className="text-lg font-bold text-[var(--c-text-primary)]">
         {props.hasTenant ? "No analytics loaded yet" : "Analytics will appear after setup"}
       </h2>
-      <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-[#657481]">
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-[var(--c-text-secondary)]">
         {props.hasTenant
           ? "Refresh this report to load the latest dynamic content performance for the selected date range."
           : "Finish the Commerce7 setup in the integration console, then open this report from Commerce7 Admin."}
@@ -760,29 +760,29 @@ export function InsightsDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f3f6f8] text-[#26343d]">
-      <header className="border-b border-[#d5dee5] bg-white">
+    <div className="min-h-screen bg-[var(--c-bg-page)] text-[var(--c-text-primary)]">
+      <header className="border-b border-[var(--c-border)] bg-[var(--c-bg-card)]">
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-start justify-between gap-4 px-6 py-9">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-[#0079a8]">
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-brand-blue)]">
               Analytics by Chat Through Automations
             </p>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight">
               Dynamic content analytics
             </h1>
-            <p className="mt-2 text-sm text-[#657481]">
+            <p className="mt-2 text-sm text-[var(--c-text-secondary)]">
               Cart Carrot and personalization outcomes for <strong>{wineryName}</strong>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {data ? (
-              <span className="border border-[#d5dee5] bg-[#f8fafb] px-4 py-3 text-xs font-semibold text-[#52616b]">
+              <span className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-4 py-3 text-xs font-semibold text-[var(--c-text-meta)]">
                 Updated {formatDateTime(data.generatedAt)}
               </span>
             ) : null}
             <Link
               href={integrationHref}
-              className="border border-[#d5dee5] bg-[#f8fafb] px-4 py-3 text-sm font-bold text-[#26343d] hover:bg-white"
+              className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-4 py-3 text-sm font-bold text-[var(--c-text-primary)] hover:bg-[var(--c-bg-card)]"
             >
               Integration console
             </Link>
@@ -791,14 +791,14 @@ export function InsightsDashboard() {
       </header>
 
       <main className="mx-auto max-w-[1240px] space-y-5 px-6 py-5">
-        <section className="border border-[#d5dee5] bg-white p-4">
+        <section className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-4">
           <div className="grid gap-3 lg:grid-cols-[220px_1fr_1fr_128px] lg:items-end">
             <label>
-              <span className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+              <span className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                 Date range
               </span>
               <select
-                className="mt-2 h-10 w-full border border-[#d5dee5] bg-white px-3 text-sm outline-none focus:border-[#0b7fab]"
+                className="mt-2 h-10 w-full border border-[var(--c-border)] bg-[var(--c-bg-card)] px-3 text-sm outline-none focus:border-[var(--c-border-focus)]"
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
               >
@@ -809,11 +809,11 @@ export function InsightsDashboard() {
               </select>
             </label>
             <label className={dateRange === "custom" ? "block" : "hidden md:block"}>
-              <span className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+              <span className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                 Start date
               </span>
               <input
-                className="mt-2 h-10 w-full border border-[#d5dee5] bg-white px-3 text-sm outline-none focus:border-[#0b7fab] disabled:bg-[#f8fafb] disabled:text-[#9aa6af]"
+                className="mt-2 h-10 w-full border border-[var(--c-border)] bg-[var(--c-bg-card)] px-3 text-sm outline-none focus:border-[var(--c-border-focus)] disabled:bg-[var(--c-bg-subtle)] disabled:text-[var(--c-text-muted)]"
                 value={dateRange === "custom" ? customStartDate : selectedRange.startDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
                 type="date"
@@ -821,11 +821,11 @@ export function InsightsDashboard() {
               />
             </label>
             <label className={dateRange === "custom" ? "block" : "hidden md:block"}>
-              <span className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+              <span className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                 End date
               </span>
               <input
-                className="mt-2 h-10 w-full border border-[#d5dee5] bg-white px-3 text-sm outline-none focus:border-[#0b7fab] disabled:bg-[#f8fafb] disabled:text-[#9aa6af]"
+                className="mt-2 h-10 w-full border border-[var(--c-border)] bg-[var(--c-bg-card)] px-3 text-sm outline-none focus:border-[var(--c-border-focus)] disabled:bg-[var(--c-bg-subtle)] disabled:text-[var(--c-text-muted)]"
                 value={dateRange === "custom" ? customEndDate : selectedRange.endDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
                 type="date"
@@ -834,7 +834,7 @@ export function InsightsDashboard() {
             </label>
             <button
               type="button"
-              className="h-10 bg-[#0b7fab] px-4 text-sm font-bold text-white hover:bg-[#096d97] disabled:cursor-not-allowed disabled:bg-[#8aaebe]"
+              className="h-10 bg-[var(--c-brand)] px-4 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)] disabled:cursor-not-allowed disabled:bg-[var(--c-disabled-bg)]"
               disabled={!canRefresh}
               onClick={() => void load()}
             >
@@ -851,27 +851,27 @@ export function InsightsDashboard() {
 
         {report && data ? (
           <>
-            <section className="border border-[#d5dee5] bg-white">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#d5dee5] p-5">
+            <section className="border border-[var(--c-border)] bg-[var(--c-bg-card)]">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--c-border)] p-5">
                 <div>
                   <h2 className="text-xl font-extrabold">
                     Surface performance
                     <InfoHint text="Results by content placement: views, clicks, adds, purchases, and revenue." />
                   </h2>
-                  <p className="mt-1 text-sm text-[#657481]">
+                  <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
                     Quantified outcomes for Cart Carrot, personalization blocks, and other captured
                     dynamic content.
                   </p>
                 </div>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                   {report.surfaces.length} surfaces tracked
                 </p>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px] border-collapse text-left">
-                  <thead className="bg-[#f8fafb]">
-                    <tr className="text-[11px] font-bold uppercase tracking-wide text-[#64727d]">
+                  <thead className="bg-[var(--c-bg-subtle)]">
+                    <tr className="text-[11px] font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                       <th className="px-4 py-4">Surface</th>
                       <th className="px-4 py-4">Revenue</th>
                       <th className="px-4 py-4">Impressions</th>
@@ -886,7 +886,7 @@ export function InsightsDashboard() {
                   <tbody>
                     {report.surfaces.length === 0 ? (
                       <tr>
-                        <td className="px-4 py-8 text-sm text-[#657481]" colSpan={9}>
+                        <td className="px-4 py-8 text-sm text-[var(--c-text-secondary)]" colSpan={9}>
                           No surface-tagged events yet. Send dynamic content events from the
                           storefront collector to populate this report.
                         </td>
@@ -909,16 +909,16 @@ export function InsightsDashboard() {
                             : "This surface is producing measurable purchase activity. Add a second placement and compare performance between the two.";
 
                           return (
-                            <tr key={row.keyName} className="border-t border-[#d5dee5] align-top">
+                            <tr key={row.keyName} className="border-t border-[var(--c-border)] align-top">
                               <td className="px-4 py-5">
                                 <p className="font-bold">{row.label}</p>
-                                <p className="mt-2 text-sm text-[#657481]">Dynamic content surface</p>
+                                <p className="mt-2 text-sm text-[var(--c-text-secondary)]">Dynamic content surface</p>
                               </td>
                               <td className="px-4 py-5">
                                 <p className="font-bold">{money(row.revenue)}</p>
-                                <span className="mt-2 block h-1 w-24 bg-[#ebf0f3]">
+                                <span className="mt-2 block h-1 w-24 bg-[var(--c-bar-track)]">
                                   <span
-                                    className="block h-full bg-[#12896d]"
+                                    className="block h-full bg-[var(--c-bar-green)]"
                                     style={{ width: metricProgress(row.revenue, surfaceMax) }}
                                   />
                                 </span>
@@ -936,41 +936,41 @@ export function InsightsDashboard() {
                               <td className="px-4 py-5 font-bold">{compactMoney(revPerK)}</td>
                               <td className="px-4 py-5">
                                 <span
-                                  className="border border-[#e3bd62] bg-[#fffaf0] px-2 py-1 text-xs font-bold text-[#9a6b14]"
+                                  className="border border-[var(--c-amber-border)] bg-[var(--c-amber-bg)] px-2 py-1 text-xs font-bold text-[var(--c-amber-text)]"
                                   title="Directional: purchase events are captured but not yet validated against Commerce7 order records. Use as a trend signal, not a final count."
                                 >
                                   Directional
                                 </span>
                               </td>
-                              <td className="px-4 py-5 text-sm leading-6 text-[#657481]">
+                              <td className="px-4 py-5 text-sm leading-6 text-[var(--c-text-secondary)]">
                                 {recommendedText}
                               </td>
                             </tr>
                           );
                         })}
                         {report.siteAvgConversion !== null && (
-                          <tr className="border-t-2 border-[#d5dee5] bg-[#f8fafb] align-top">
+                          <tr className="border-t-2 border-[var(--c-border)] bg-[var(--c-bg-subtle)] align-top">
                             <td className="px-4 py-4">
-                              <p className="font-bold text-[#52616b]">Site average</p>
-                              <p className="mt-1 text-sm text-[#657481]">All sessions · baseline</p>
+                              <p className="font-bold text-[var(--c-text-meta)]">Site average</p>
+                              <p className="mt-1 text-sm text-[var(--c-text-secondary)]">All sessions · baseline</p>
                             </td>
-                            <td className="px-4 py-4 text-sm text-[#9aa6af]">—</td>
-                            <td className="px-4 py-4 text-sm text-[#9aa6af]">—</td>
-                            <td className="px-4 py-4 text-sm text-[#9aa6af]">—</td>
-                            <td className="px-4 py-4 text-sm text-[#9aa6af]">—</td>
-                            <td className="px-4 py-4 font-bold text-[#52616b]">
+                            <td className="px-4 py-4 text-sm text-[var(--c-text-muted)]">—</td>
+                            <td className="px-4 py-4 text-sm text-[var(--c-text-muted)]">—</td>
+                            <td className="px-4 py-4 text-sm text-[var(--c-text-muted)]">—</td>
+                            <td className="px-4 py-4 text-sm text-[var(--c-text-muted)]">—</td>
+                            <td className="px-4 py-4 font-bold text-[var(--c-text-meta)]">
                               {pct(report.siteAvgConversion)}
                             </td>
-                            <td className="px-4 py-4 text-sm text-[#9aa6af]">—</td>
+                            <td className="px-4 py-4 text-sm text-[var(--c-text-muted)]">—</td>
                             <td className="px-4 py-4">
                               <span
-                                className="border border-[#c6d2da] bg-[#f0f4f7] px-2 py-1 text-xs font-bold text-[#64727d]"
+                                className="border border-[var(--c-border)] bg-[var(--c-bg-muted)] px-2 py-1 text-xs font-bold text-[var(--c-text-label)]"
                                 title="Baseline: the site-wide conversion rate across all sessions, including shoppers who never saw any dynamic content. Use this to judge how much lift the surfaces above are adding."
                               >
                                 Baseline
                               </span>
                             </td>
-                            <td className="px-4 py-4 text-sm text-[#9aa6af]">—</td>
+                            <td className="px-4 py-4 text-sm text-[var(--c-text-muted)]">—</td>
                           </tr>
                         )}
                       </>
@@ -978,7 +978,7 @@ export function InsightsDashboard() {
                   </tbody>
                 </table>
               </div>
-              <p className="mt-1 text-xs text-[#9aa6af] lg:hidden">← Scroll to see all columns</p>
+              <p className="mt-1 text-xs text-[var(--c-text-muted)] lg:hidden">← Scroll to see all columns</p>
             </section>
 
             {(() => {
@@ -994,19 +994,19 @@ export function InsightsDashboard() {
               );
               const overallAtcRate = totalImpressions > 0 ? totalAdds / totalImpressions : 0;
               return (
-                <section className="border border-[#d5dee5] bg-white">
-                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#d5dee5] p-5">
+                <section className="border border-[var(--c-border)] bg-[var(--c-bg-card)]">
+                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--c-border)] p-5">
                     <div>
                       <h2 className="text-xl font-extrabold">
                         Cart Carrot performance by title
                         <InfoHint text="Impressions, clicks, and add-to-cart events grouped by carrot title. Add-to-cart rate = adds ÷ impressions." />
                       </h2>
-                      <p className="mt-1 text-sm text-[#657481]">
+                      <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
                         Ranked by add-to-cart rate · {selectedRange.label} for{" "}
                         <strong>{wineryName}</strong>
                       </p>
                     </div>
-                    <span className="border border-[#d5dee5] bg-[#f8fafb] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                    <span className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                       {ccbd.rows.length} {ccbd.rows.length === 1 ? "carrot" : "carrots"}
                     </span>
                   </div>
@@ -1015,8 +1015,8 @@ export function InsightsDashboard() {
                     <>
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[860px] border-collapse text-left">
-                        <thead className="bg-[#f8fafb]">
-                          <tr className="text-[11px] font-bold uppercase tracking-wide text-[#64727d]">
+                        <thead className="bg-[var(--c-bg-subtle)]">
+                          <tr className="text-[11px] font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                             <th className="px-4 py-4">Carrot title</th>
                             <th className="px-4 py-4">Recommended wine</th>
                             <th className="px-4 py-4 tabular-nums">Impressions</th>
@@ -1039,10 +1039,10 @@ export function InsightsDashboard() {
                             return (
                               <tr
                                 key={`${row.blockTitle}|||${row.recommendedSku ?? ""}`}
-                                className="border-t border-[#d5dee5] align-top"
+                                className="border-t border-[var(--c-border)] align-top"
                               >
                                 <td className="px-4 py-4 font-bold">{row.blockTitle}</td>
-                                <td className="px-4 py-4 text-sm text-[#26343d]">{wineName}</td>
+                                <td className="px-4 py-4 text-sm text-[var(--c-text-primary)]">{wineName}</td>
                                 <td className="px-4 py-4 tabular-nums">{imp}</td>
                                 <td className="px-4 py-4 tabular-nums">{clicks}</td>
                                 <td className="px-4 py-4">
@@ -1058,10 +1058,10 @@ export function InsightsDashboard() {
                                       className={[
                                         "border px-2 py-1 text-xs font-bold",
                                         deltaPts > 0
-                                          ? "border-[#12896d] bg-[#eefaf5] text-[#0e6f58]"
+                                          ? "border-[var(--c-green-border)] bg-[var(--c-green-bg)] text-[var(--c-green-text)]"
                                           : deltaPts < 0
-                                            ? "border-[#c0392b] bg-[#fdf2f2] text-[#b03030]"
-                                            : "border-[#d5dee5] bg-[#f8fafb] text-[#64727d]",
+                                            ? "border-[var(--c-red-border)] bg-[var(--c-red-bg)] text-[var(--c-red-text)]"
+                                            : "border-[var(--c-border)] bg-[var(--c-bg-subtle)] text-[var(--c-text-label)]",
                                       ].join(" ")}
                                     >
                                       {deltaPts > 0
@@ -1071,34 +1071,34 @@ export function InsightsDashboard() {
                                           : "avg"}
                                     </span>
                                   ) : (
-                                    <span className="text-sm text-[#9aa6af]">—</span>
+                                    <span className="text-sm text-[var(--c-text-muted)]">—</span>
                                   )}
                                 </td>
                               </tr>
                             );
                           })}
-                          <tr className="border-t-2 border-[#d5dee5] bg-[#f8fafb] align-top">
-                            <td className="px-4 py-3 font-bold text-[#52616b]" colSpan={6}>
+                          <tr className="border-t-2 border-[var(--c-border)] bg-[var(--c-bg-subtle)] align-top">
+                            <td className="px-4 py-3 font-bold text-[var(--c-text-meta)]" colSpan={6}>
                               Overall average
                             </td>
-                            <td className="px-4 py-3 font-bold text-[#52616b]">
+                            <td className="px-4 py-3 font-bold text-[var(--c-text-meta)]">
                               {totalImpressions > 0 ? pct(overallAtcRate) : "—"}
                             </td>
-                            <td className="px-4 py-3 text-sm text-[#9aa6af]">—</td>
+                            <td className="px-4 py-3 text-sm text-[var(--c-text-muted)]">—</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <p className="mt-1 text-xs text-[#9aa6af] lg:hidden">← Scroll to see all columns</p>
+                    <p className="mt-1 text-xs text-[var(--c-text-muted)] lg:hidden">← Scroll to see all columns</p>
                     </>
                   ) : (
-                    <div className="border-t border-[#d5dee5] p-5">
-                      <p className="text-sm font-bold text-[#26343d]">
+                    <div className="border-t border-[var(--c-border)] p-5">
+                      <p className="text-sm font-bold text-[var(--c-text-primary)]">
                         Per-carrot breakdown not yet available
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-[#657481]">
-                        Add <code className="rounded bg-[#f0f4f7] px-1 py-0.5 font-mono text-xs">blockTitle</code> and{" "}
-                        <code className="rounded bg-[#f0f4f7] px-1 py-0.5 font-mono text-xs">recommendedProductSku</code>{" "}
+                      <p className="mt-2 text-sm leading-6 text-[var(--c-text-secondary)]">
+                        Add <code className="rounded bg-[var(--c-bg-muted)] px-1 py-0.5 font-mono text-xs">blockTitle</code> and{" "}
+                        <code className="rounded bg-[var(--c-bg-muted)] px-1 py-0.5 font-mono text-xs">recommendedProductSku</code>{" "}
                         to your Cart Carrot events to see which carrots are driving add-to-cart activity and compare them against each other.
                       </p>
                     </div>
@@ -1120,19 +1120,19 @@ export function InsightsDashboard() {
               );
               const overallPbAtcRate = totalPbImpressions > 0 ? totalPbAdds / totalPbImpressions : 0;
               return (
-                <section className="border border-[#d5dee5] bg-white">
-                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#d5dee5] p-5">
+                <section className="border border-[var(--c-border)] bg-[var(--c-bg-card)]">
+                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--c-border)] p-5">
                     <div>
                       <h2 className="text-xl font-extrabold">
                         Personalization block performance by title
                         <InfoHint text="Impressions, clicks, and add-to-cart events grouped by block title. Add-to-cart rate = adds ÷ impressions." />
                       </h2>
-                      <p className="mt-1 text-sm text-[#657481]">
+                      <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
                         Ranked by add-to-cart rate · {selectedRange.label} for{" "}
                         <strong>{wineryName}</strong>
                       </p>
                     </div>
-                    <span className="border border-[#d5dee5] bg-[#f8fafb] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                    <span className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                       {pbbd.rows.length} {pbbd.rows.length === 1 ? "block" : "blocks"}
                     </span>
                   </div>
@@ -1141,8 +1141,8 @@ export function InsightsDashboard() {
                     <>
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[760px] border-collapse text-left">
-                        <thead className="bg-[#f8fafb]">
-                          <tr className="text-[11px] font-bold uppercase tracking-wide text-[#64727d]">
+                        <thead className="bg-[var(--c-bg-subtle)]">
+                          <tr className="text-[11px] font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                             <th className="px-4 py-4">Block title</th>
                             <th className="px-4 py-4 tabular-nums">Impressions</th>
                             <th className="px-4 py-4 tabular-nums">Clicks</th>
@@ -1162,7 +1162,7 @@ export function InsightsDashboard() {
                             return (
                               <tr
                                 key={row.blockTitle}
-                                className="border-t border-[#d5dee5] align-top"
+                                className="border-t border-[var(--c-border)] align-top"
                               >
                                 <td className="px-4 py-4 font-bold">{row.blockTitle}</td>
                                 <td className="px-4 py-4 tabular-nums">{imp}</td>
@@ -1180,10 +1180,10 @@ export function InsightsDashboard() {
                                       className={[
                                         "border px-2 py-1 text-xs font-bold",
                                         deltaPts > 0
-                                          ? "border-[#12896d] bg-[#eefaf5] text-[#0e6f58]"
+                                          ? "border-[var(--c-green-border)] bg-[var(--c-green-bg)] text-[var(--c-green-text)]"
                                           : deltaPts < 0
-                                            ? "border-[#c0392b] bg-[#fdf2f2] text-[#b03030]"
-                                            : "border-[#d5dee5] bg-[#f8fafb] text-[#64727d]",
+                                            ? "border-[var(--c-red-border)] bg-[var(--c-red-bg)] text-[var(--c-red-text)]"
+                                            : "border-[var(--c-border)] bg-[var(--c-bg-subtle)] text-[var(--c-text-label)]",
                                       ].join(" ")}
                                     >
                                       {deltaPts > 0
@@ -1193,33 +1193,33 @@ export function InsightsDashboard() {
                                           : "avg"}
                                     </span>
                                   ) : (
-                                    <span className="text-sm text-[#9aa6af]">—</span>
+                                    <span className="text-sm text-[var(--c-text-muted)]">—</span>
                                   )}
                                 </td>
                               </tr>
                             );
                           })}
-                          <tr className="border-t-2 border-[#d5dee5] bg-[#f8fafb] align-top">
-                            <td className="px-4 py-3 font-bold text-[#52616b]" colSpan={5}>
+                          <tr className="border-t-2 border-[var(--c-border)] bg-[var(--c-bg-subtle)] align-top">
+                            <td className="px-4 py-3 font-bold text-[var(--c-text-meta)]" colSpan={5}>
                               Overall average
                             </td>
-                            <td className="px-4 py-3 font-bold text-[#52616b]">
+                            <td className="px-4 py-3 font-bold text-[var(--c-text-meta)]">
                               {totalPbImpressions > 0 ? pct(overallPbAtcRate) : "—"}
                             </td>
-                            <td className="px-4 py-3 text-sm text-[#9aa6af]">—</td>
+                            <td className="px-4 py-3 text-sm text-[var(--c-text-muted)]">—</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <p className="mt-1 text-xs text-[#9aa6af] lg:hidden">← Scroll to see all columns</p>
+                    <p className="mt-1 text-xs text-[var(--c-text-muted)] lg:hidden">← Scroll to see all columns</p>
                     </>
                   ) : (
-                    <div className="border-t border-[#d5dee5] p-5">
-                      <p className="text-sm font-bold text-[#26343d]">
+                    <div className="border-t border-[var(--c-border)] p-5">
+                      <p className="text-sm font-bold text-[var(--c-text-primary)]">
                         Per-block breakdown not yet available
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-[#657481]">
-                        Add <code className="rounded bg-[#f0f4f7] px-1 py-0.5 font-mono text-xs">blockTitle</code>{" "}
+                      <p className="mt-2 text-sm leading-6 text-[var(--c-text-secondary)]">
+                        Add <code className="rounded bg-[var(--c-bg-muted)] px-1 py-0.5 font-mono text-xs">blockTitle</code>{" "}
                         to your personalization block events to see per-block performance.
                       </p>
                     </div>
@@ -1229,16 +1229,16 @@ export function InsightsDashboard() {
             })()}
 
             {runningExperiments.length > 0 && currentMetrics ? (
-              <section className="border border-[#d5dee5] bg-white p-5">
+              <section className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-extrabold">Running strategies</h2>
-                    <p className="mt-1 text-sm text-[#657481]">
+                    <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
                       Each strategy starts with a baseline snapshot, then reports what changed
                       from that point forward.
                     </p>
                   </div>
-                  <span className="border border-[#d5dee5] bg-[#f8fafb] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                  <span className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                     {plural(runningExperiments.length, "active strategy", "active strategies")}
                   </span>
                 </div>
@@ -1259,24 +1259,24 @@ export function InsightsDashboard() {
                     );
                     const isClearing = clearingExperimentId === experiment.id;
                     return (
-                      <article key={experiment.id} className="border border-[#d5dee5] bg-[#f8fafb] p-4">
+                      <article key={experiment.id} className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-4">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                          <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                             Running
                           </p>
-                          <span className="border border-[#12896d] bg-[#eefaf5] px-2 py-1 text-xs font-bold text-[#0e6f58]">
+                          <span className="border border-[var(--c-green-border)] bg-[var(--c-green-bg)] px-2 py-1 text-xs font-bold text-[var(--c-green-text)]">
                             Review {formatDateTime(experiment.reviewAt)}
                           </span>
                         </div>
-                        <h3 className="mt-3 text-base font-extrabold text-[#26343d]">
+                        <h3 className="mt-3 text-base font-extrabold text-[var(--c-text-primary)]">
                           {experiment.observation}
                         </h3>
-                        <p className="mt-3 text-sm leading-6 text-[#657481]">
+                        <p className="mt-3 text-sm leading-6 text-[var(--c-text-secondary)]">
                           Started {formatDateTime(experiment.startedAt)} from{" "}
                           {experiment.rangeLabel}. Running for{" "}
                           {plural(daysBetween(experiment.startedAt, new Date().toISOString()), "day")}.
                         </p>
-                        <p className="mt-2 text-xs leading-5 text-[#657481]">
+                        <p className="mt-2 text-xs leading-5 text-[var(--c-text-secondary)]">
                           {experiment.reviewReason ??
                             `This strategy is scheduled for ${plural(
                               experiment.testLengthDays ?? 3,
@@ -1284,54 +1284,54 @@ export function InsightsDashboard() {
                             )}.`}
                         </p>
                         <div className="mt-4 grid grid-cols-3 gap-2">
-                          <div className="border border-[#d5dee5] bg-white p-3">
-                            <p className="text-[11px] font-bold uppercase text-[#64727d]">
+                          <div className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-3">
+                            <p className="text-[11px] font-bold uppercase text-[var(--c-text-label)]">
                               New events
                             </p>
                             <p className="mt-1 text-xl font-extrabold">{newEvents}</p>
                           </div>
-                          <div className="border border-[#d5dee5] bg-white p-3">
-                            <p className="text-[11px] font-bold uppercase text-[#64727d]">
+                          <div className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-3">
+                            <p className="text-[11px] font-bold uppercase text-[var(--c-text-label)]">
                               Purchases
                             </p>
                             <p className="mt-1 text-xl font-extrabold">{newPurchases}</p>
                           </div>
-                          <div className="border border-[#d5dee5] bg-white p-3">
-                            <p className="text-[11px] font-bold uppercase text-[#64727d]">
+                          <div className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-3">
+                            <p className="text-[11px] font-bold uppercase text-[var(--c-text-label)]">
                               Revenue
                             </p>
                             <p className="mt-1 text-xl font-extrabold">{money(newRevenue)}</p>
                           </div>
                         </div>
-                        <p className="mt-4 text-sm leading-6 text-[#26343d]">
+                        <p className="mt-4 text-sm leading-6 text-[var(--c-text-primary)]">
                           {resultSummary(currentMetrics, experiment.baseline)}
                         </p>
-                        <p className="mt-3 text-xs leading-5 text-[#657481]">
+                        <p className="mt-3 text-xs leading-5 text-[var(--c-text-secondary)]">
                           Add-to-cart rate: {pct(experiment.baseline.addRate)} to{" "}
                           {pct(currentMetrics.addRate)} ({rateDeltaLabel(currentMetrics.addRate, experiment.baseline.addRate)}).
                           Conversion: {pct(experiment.baseline.conversionRate)} to{" "}
                           {pct(currentMetrics.conversionRate)} ({rateDeltaLabel(currentMetrics.conversionRate, experiment.baseline.conversionRate)}).
                         </p>
                         {isClearing ? (
-                          <div className="mt-4 border border-[#e3bd62] bg-[#fffaf0] p-3">
-                            <p className="text-sm font-bold text-[#26343d]">
+                          <div className="mt-4 border border-[var(--c-amber-border)] bg-[var(--c-amber-bg)] p-3">
+                            <p className="text-sm font-bold text-[var(--c-text-primary)]">
                               Clear this strategy?
                             </p>
-                            <p className="mt-2 text-sm leading-6 text-[#657481]">
+                            <p className="mt-2 text-sm leading-6 text-[var(--c-text-secondary)]">
                               This removes this one running strategy and its saved strategy brief.
                               Analytics events and dashboard totals stay in place.
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <button
                                 type="button"
-                                className="border border-[#b83b3b] bg-[#b83b3b] px-3 py-2 text-sm font-bold text-white hover:bg-[#9f3030]"
+                                className="border border-[var(--c-red-btn)] bg-[var(--c-red-btn)] px-3 py-2 text-sm font-bold text-white hover:bg-[var(--c-red-btn-hover)]"
                                 onClick={() => clearExperiment(experiment.id)}
                               >
                                 Yes, clear this strategy
                               </button>
                               <button
                                 type="button"
-                                className="border border-[#d5dee5] bg-white px-3 py-2 text-sm font-bold text-[#26343d] hover:bg-[#f8fafb]"
+                                className="border border-[var(--c-border)] bg-[var(--c-bg-card)] px-3 py-2 text-sm font-bold text-[var(--c-text-primary)] hover:bg-[var(--c-bg-subtle)]"
                                 onClick={() => setClearingExperimentId(null)}
                               >
                                 Keep it
@@ -1341,7 +1341,7 @@ export function InsightsDashboard() {
                         ) : (
                           <button
                             type="button"
-                            className="mt-4 border border-[#d5dee5] bg-white px-3 py-2 text-sm font-bold text-[#64727d] hover:bg-[#f8fafb]"
+                            className="mt-4 border border-[var(--c-border)] bg-[var(--c-bg-card)] px-3 py-2 text-sm font-bold text-[var(--c-text-label)] hover:bg-[var(--c-bg-subtle)]"
                             onClick={() => setClearingExperimentId(experiment.id)}
                           >
                             Clear this strategy
@@ -1354,16 +1354,16 @@ export function InsightsDashboard() {
               </section>
             ) : null}
 
-            <section className="border border-[#d5dee5] bg-white p-5">
+            <section className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-extrabold">Insights</h2>
-                  <p className="mt-1 text-sm text-[#657481]">
+                  <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
                     Recommended strategies appear after enough shopper activity and observed
                     purchases.
                   </p>
                 </div>
-                <span className="border border-[#d5dee5] bg-[#f8fafb] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                <span className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                   {plural(report.purchases, "observed purchase")} ·{" "}
                   {plural(data.analytics.totalEvents, "shopper event")}
                 </span>
@@ -1413,17 +1413,17 @@ export function InsightsDashboard() {
                       };
                     };
                     return (
-                      <article key={insight.id} className="border border-[#d5dee5] bg-[#f8fafb] p-4">
+                      <article key={insight.id} className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-4">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                          <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                             Observation
                           </p>
                           <span
                             className={[
                               "border px-2 py-1 text-xs font-bold",
                               insight.confidence === "High"
-                                ? "border-[#12896d] bg-[#eefaf5] text-[#0e6f58]"
-                                : "border-[#e3bd62] bg-[#fffaf0] text-[#9a6b14]",
+                                ? "border-[var(--c-green-border)] bg-[var(--c-green-bg)] text-[var(--c-green-text)]"
+                                : "border-[var(--c-amber-border)] bg-[var(--c-amber-bg)] text-[var(--c-amber-text)]",
                             ].join(" ")}
                             title={
                               insight.confidence === "High"
@@ -1434,33 +1434,33 @@ export function InsightsDashboard() {
                             {insight.confidence} confidence
                           </span>
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-[#26343d]">
+                        <p className="mt-3 text-sm leading-6 text-[var(--c-text-primary)]">
                           {insight.observation}
                         </p>
-                        <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                        <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                           Try this
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-[#26343d]">
+                        <p className="mt-2 text-sm leading-6 text-[var(--c-text-primary)]">
                           {insight.suggestion.replace(/^Try this:\s*/i, "")}
                         </p>
-                        <p className="mt-4 text-xs leading-5 text-[#657481]">{insight.basedOn}</p>
+                        <p className="mt-4 text-xs leading-5 text-[var(--c-text-secondary)]">{insight.basedOn}</p>
                         {acceptedExperiment ? (
-                          <div className="mt-4 border border-[#d5dee5] bg-white p-3">
-                            <p className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                          <div className="mt-4 border border-[var(--c-border)] bg-[var(--c-bg-card)] p-3">
+                            <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                               Strategy brief
                             </p>
-                            <p className="mt-2 text-sm leading-6 text-[#26343d]">
+                            <p className="mt-2 text-sm leading-6 text-[var(--c-text-primary)]">
                               Make the change now in Commerce7, then let this run until{" "}
                               {formatDateTime(acceptedExperiment.reviewAt)}.
                             </p>
-                            <p className="mt-2 text-sm leading-6 text-[#26343d]">
+                            <p className="mt-2 text-sm leading-6 text-[var(--c-text-primary)]">
                               {acceptedExperiment.reviewReason ??
                                   `This strategy is scheduled for ${plural(
                                     acceptedExperiment.testLengthDays ?? 3,
                                     "day",
                                   )}.`}
                             </p>
-                            <p className="mt-2 text-xs leading-5 text-[#657481]">
+                            <p className="mt-2 text-xs leading-5 text-[var(--c-text-secondary)]">
                               We saved the starting point at {formatDateTime(acceptedExperiment.startedAt)}:
                               {" "}
                               {plural(acceptedExperiment.baseline.purchases, "observed purchase")},{" "}
@@ -1471,11 +1471,11 @@ export function InsightsDashboard() {
                           </div>
                         ) : null}
                         {isSetupOpen && !isAccepted && recommendedTestLength ? (
-                          <div className="mt-4 border border-[#cfd9e0] bg-white p-3">
-                            <p className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                          <div className="mt-4 border border-[var(--c-border-subtle)] bg-[var(--c-bg-card)] p-3">
+                            <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                               Suggested run length
                             </p>
-                            <p className="mt-2 text-sm leading-6 text-[#26343d]">
+                            <p className="mt-2 text-sm leading-6 text-[var(--c-text-primary)]">
                               {recommendedTestLength.explanation}
                             </p>
                             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1488,8 +1488,8 @@ export function InsightsDashboard() {
                                     className={[
                                       "border px-3 py-2 text-sm font-bold",
                                       days === recommendedTestLength.days
-                                        ? "border-[#0b7fab] bg-[#eef7fb] text-[#0b7fab]"
-                                        : "border-[#d5dee5] bg-white text-[#26343d] hover:bg-[#f8fafb]",
+                                        ? "border-[var(--c-brand)] bg-[var(--c-brand-light)] text-[var(--c-brand)]"
+                                        : "border-[var(--c-border)] bg-[var(--c-bg-card)] text-[var(--c-text-primary)] hover:bg-[var(--c-bg-subtle)]",
                                     ].join(" ")}
                                     disabled={!plan}
                                     onClick={() => {
@@ -1503,11 +1503,11 @@ export function InsightsDashboard() {
                             </div>
                             <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_140px]">
                               <label>
-                                <span className="text-xs font-bold uppercase tracking-wide text-[#64727d]">
+                                <span className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                                   Custom review date
                                 </span>
                                 <input
-                                  className="mt-2 h-10 w-full border border-[#d5dee5] bg-white px-3 text-sm outline-none focus:border-[#0b7fab]"
+                                  className="mt-2 h-10 w-full border border-[var(--c-border)] bg-[var(--c-bg-card)] px-3 text-sm outline-none focus:border-[var(--c-border-focus)]"
                                   type="date"
                                   value={customReviewDate}
                                   min={dateInputValue(new Date())}
@@ -1521,7 +1521,7 @@ export function InsightsDashboard() {
                               </label>
                               <button
                                 type="button"
-                                className="self-end border border-[#0b7fab] bg-white px-3 py-2 text-sm font-bold text-[#0b7fab] hover:bg-[#eef7fb]"
+                                className="self-end border border-[var(--c-brand)] bg-[var(--c-bg-card)] px-3 py-2 text-sm font-bold text-[var(--c-brand)] hover:bg-[var(--c-brand-light)]"
                                 onClick={() => {
                                   const plan = buildCustomPlan();
                                   if (plan) acceptExperiment(insight, plan);
@@ -1534,7 +1534,7 @@ export function InsightsDashboard() {
                         ) : null}
                         <button
                           type="button"
-                          className="mt-4 w-full border border-[#0b7fab] bg-white px-3 py-2 text-sm font-bold text-[#0b7fab] hover:bg-[#eef7fb] disabled:border-[#c6d2da] disabled:text-[#657481]"
+                          className="mt-4 w-full border border-[var(--c-brand)] bg-[var(--c-bg-card)] px-3 py-2 text-sm font-bold text-[var(--c-brand)] hover:bg-[var(--c-brand-light)] disabled:border-[var(--c-border)] disabled:text-[var(--c-text-secondary)]"
                           disabled={isAccepted}
                           onClick={() => setSetupInsightId(isSetupOpen ? null : id)}
                         >
@@ -1549,11 +1549,11 @@ export function InsightsDashboard() {
                   })}
                 </div>
               ) : (
-                <div className="mt-5 border border-dashed border-[#cfd9e0] bg-[#f8fafb] p-5">
-                  <p className="text-sm font-bold text-[#26343d]">
+                <div className="mt-5 border border-dashed border-[var(--c-border-subtle)] bg-[var(--c-bg-subtle)] p-5">
+                  <p className="text-sm font-bold text-[var(--c-text-primary)]">
                     More activity is needed before we recommend a next move.
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-[#657481]">
+                  <p className="mt-2 text-sm leading-6 text-[var(--c-text-secondary)]">
                     Keep the test running until we observe at least 5 purchases and 25 shopper
                     events. Current sample: {plural(report.purchases, "observed purchase")} and{" "}
                     {plural(data.analytics.totalEvents, "shopper event")}.
@@ -1563,25 +1563,25 @@ export function InsightsDashboard() {
             </section>
 
             <section className="grid gap-4 lg:grid-cols-[1fr_368px]">
-              <div className="border border-[#d5dee5] bg-white p-5">
+              <div className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-extrabold">
                       Behavior funnel
                       <InfoHint text="Views through purchases for the selected date range." />
                     </h2>
-                    <p className="mt-1 text-sm text-[#657481]">
+                    <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
                       {selectedRange.label} for <strong>{wineryName}</strong>
                     </p>
                   </div>
                   <span
-                    className="border border-[#e3bd62] bg-[#fffaf0] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#9a6b14]"
+                    className="border border-[var(--c-amber-border)] bg-[var(--c-amber-bg)] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[var(--c-amber-text)]"
                     title="Directional attribution: purchase events are captured from the storefront but not yet matched to Commerce7 order records. Numbers show the trend — treat them as estimates until order correlation is confirmed."
                   >
                     Directional attribution
                   </span>
                 </div>
-                <div className="mt-5 space-y-4 border-t border-[#d5dee5] pt-5">
+                <div className="mt-5 space-y-4 border-t border-[var(--c-border)] pt-5">
                   {[
                     ["Impressions", report.impressions],
                     ["Clicks", report.clicks],
@@ -1591,9 +1591,9 @@ export function InsightsDashboard() {
                   ].map(([label, value]) => (
                     <div key={label} className="grid grid-cols-[120px_1fr_40px] items-center gap-3">
                       <span className="text-sm font-medium">{label}</span>
-                      <span className="h-3 bg-[#ebf0f3]">
+                      <span className="h-3 bg-[var(--c-bar-track)]">
                         <span
-                          className="block h-full bg-[#0b7fab]"
+                          className="block h-full bg-[var(--c-brand)]"
                           style={{ width: metricProgress(Number(value), funnelMax) }}
                         />
                       </span>
@@ -1603,24 +1603,24 @@ export function InsightsDashboard() {
                 </div>
               </div>
 
-              <div className="border border-[#d5dee5] bg-white p-5">
+              <div className="border border-[var(--c-border)] bg-[var(--c-bg-card)] p-5">
                 <h2 className="text-xl font-extrabold">
                   Attribution health
                   <InfoHint text="Which purchase events are connected to captured dynamic content." />
                 </h2>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="border border-[#d5dee5] bg-[#f8fafb] p-3">
+                  <div className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-3">
                     <p
-                      className="text-xs font-bold uppercase tracking-wide text-[#64727d]"
+                      className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]"
                       title="Attributed: purchase events that arrived alongside a Cart Carrot or personalization block interaction — the shopper saw dynamic content before buying."
                     >
                       Attributed
                     </p>
                     <p className="mt-2 text-2xl font-extrabold">{report.purchases}</p>
                   </div>
-                  <div className="border border-[#d5dee5] bg-[#f8fafb] p-3">
+                  <div className="border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-3">
                     <p
-                      className="text-xs font-bold uppercase tracking-wide text-[#64727d]"
+                      className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]"
                       title="Unattributed: orders in Commerce7 that have no matching dynamic content event — the shopper found the product on their own."
                     >
                       Unattributed
@@ -1630,7 +1630,7 @@ export function InsightsDashboard() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-5 text-sm leading-6 text-[#657481]">
+                <p className="mt-5 text-sm leading-6 text-[var(--c-text-secondary)]">
                   Revenue is quantified from captured purchase/order events. Treat it as directional
                   until session-to-order correlation is validated against Commerce7 orders.
                 </p>

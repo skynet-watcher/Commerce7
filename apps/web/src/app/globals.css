@@ -1,13 +1,129 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --console-bg: #fafaf9;
-  --console-fg: #1c1917;
-  --console-surface: #ffffff;
-  --console-border: #e7e5e4;
-  --console-muted: #78716c;
+  /* Legacy console variables (integration-console.tsx) */
+  --background:        #fafaf9;
+  --foreground:        #1c1917;
+  --console-bg:        #fafaf9;
+  --console-fg:        #1c1917;
+  --console-surface:   #ffffff;
+  --console-border:    #e7e5e4;
+  --console-muted:     #78716c;
+
+  /* Surfaces */
+  --c-bg-page:         #f3f6f8;
+  --c-bg-card:         #ffffff;
+  --c-bg-subtle:       #f8fafb;
+  --c-bg-muted:        #f0f4f7;
+
+  /* Borders */
+  --c-border:          #d5dee5;
+  --c-border-subtle:   #cfd9e0;
+  --c-border-focus:    #0b7fab;
+
+  /* Text */
+  --c-text-primary:    #26343d;
+  --c-text-secondary:  #657481;
+  --c-text-muted:      #9aa6af;
+  --c-text-label:      #64727d;
+  --c-text-meta:       #52616b;
+
+  /* Brand / actions */
+  --c-brand:           #0b7fab;
+  --c-brand-hover:     #096d97;
+  --c-brand-light:     #eef7fb;
+  --c-brand-blue:      #0079a8;
+
+  /* Status — green (positive) */
+  --c-green-border:    #12896d;
+  --c-green-bg:        #eefaf5;
+  --c-green-text:      #0e6f58;
+
+  /* Status — amber (warning/directional) */
+  --c-amber-border:    #e3bd62;
+  --c-amber-bg:        #fffaf0;
+  --c-amber-text:      #9a6b14;
+
+  /* Status — red (negative) */
+  --c-red-border:      #c0392b;
+  --c-red-bg:          #fdf2f2;
+  --c-red-text:        #b03030;
+
+  /* Danger action button */
+  --c-red-btn:         #b83b3b;
+  --c-red-btn-hover:   #9f3030;
+
+  /* Disabled */
+  --c-disabled-bg:     #8aaebe;
+
+  /* Charts */
+  --c-bar-track:       #ebf0f3;
+  --c-bar-fill:        #0b7fab;
+  --c-bar-green:       #12896d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Legacy console variables */
+    --background:        #0c0a09;
+    --foreground:        #fafaf9;
+    --console-bg:        #0c0a09;
+    --console-fg:        #fafaf9;
+    --console-surface:   #1c1917;
+    --console-border:    #292524;
+    --console-muted:     #a8a29e;
+
+    /* Surfaces */
+    --c-bg-page:         #0f1923;
+    --c-bg-card:         #18252f;
+    --c-bg-subtle:       #1e2f3c;
+    --c-bg-muted:        #243341;
+
+    /* Borders */
+    --c-border:          #2d404f;
+    --c-border-subtle:   #243341;
+    --c-border-focus:    #3fa8d4;
+
+    /* Text */
+    --c-text-primary:    #e8f0f5;
+    --c-text-secondary:  #8fa8b8;
+    --c-text-muted:      #5c7585;
+    --c-text-label:      #7a9aaa;
+    --c-text-meta:       #8fa8b8;
+
+    /* Brand / actions */
+    --c-brand:           #3fa8d4;
+    --c-brand-hover:     #5ab8e0;
+    --c-brand-light:     #1a3040;
+    --c-brand-blue:      #3fa8d4;
+
+    /* Status — green (positive) */
+    --c-green-border:    #1aad8a;
+    --c-green-bg:        #0d2b22;
+    --c-green-text:      #2dd4a8;
+
+    /* Status — amber (warning/directional) */
+    --c-amber-border:    #c9a23a;
+    --c-amber-bg:        #2a1f08;
+    --c-amber-text:      #f0c060;
+
+    /* Status — red (negative) */
+    --c-red-border:      #d9534f;
+    --c-red-bg:          #2a1010;
+    --c-red-text:        #f08080;
+
+    /* Danger action button */
+    --c-red-btn:         #c44040;
+    --c-red-btn-hover:   #a83535;
+
+    /* Disabled */
+    --c-disabled-bg:     #3a5a6e;
+
+    /* Charts */
+    --c-bar-track:       #243341;
+    --c-bar-fill:        #3fa8d4;
+    --c-bar-green:       #1aad8a;
+  }
 }
 
 @theme inline {
@@ -15,18 +131,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0c0a09;
-    --foreground: #fafaf9;
-    --console-bg: #0c0a09;
-    --console-fg: #fafaf9;
-    --console-surface: #1c1917;
-    --console-border: #292524;
-    --console-muted: #a8a29e;
-  }
 }
 
 body {
