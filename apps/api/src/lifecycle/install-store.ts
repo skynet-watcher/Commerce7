@@ -6,6 +6,7 @@ export type AppInstallStore = {
   recordInstall(row: AppInstallWrite): Promise<void>;
   recordUninstall(tenantId: string): Promise<void>;
   getInstall(tenantId: string): Promise<AppInstallRecord | null>;
+  listActiveTenantIds(): Promise<string[]>;
 };
 
 export class InMemoryAppInstallStore implements AppInstallStore {
@@ -32,6 +33,13 @@ export class InMemoryAppInstallStore implements AppInstallStore {
 
   async getInstall(tenantId: string): Promise<AppInstallRecord | null> {
     return this.rows.get(tenantId) ?? null;
+  }
+
+  async listActiveTenantIds(): Promise<string[]> {
+    return Array.from(this.rows.values())
+      .filter((row) => row.uninstalledAt === null)
+      .map((row) => row.tenantId)
+      .sort();
   }
 }
 
@@ -94,5 +102,12 @@ export class PgAppInstallStore implements AppInstallStore {
       installedAt: row.installed_at,
       uninstalledAt: row.uninstalled_at,
     };
+  }
+
+  async listActiveTenantIds(): Promise<string[]> {
+    const r = await this.pool.query<{ tenant_id: string }>(
+      `SELECT tenant_id FROM app_installs WHERE uninstalled_at IS NULL ORDER BY tenant_id ASC`,
+    );
+    return r.rows.map((row) => row.tenant_id);
   }
 }

@@ -22,6 +22,7 @@ import { runOrderSyncStep, type SyncStateStore } from "./sync/sync-state.js";
 import { verifyWebhookBasicAuth } from "./webhook/basic-auth.js";
 import { deriveWebhookIdempotencyKey } from "./webhook/idempotency.js";
 import { commerce7WebhookBodySchema } from "./webhook/schema.js";
+import { verifyWebhookSignature, type WebhookSignatureConfig } from "./webhook/signature.js";
 import type { WebhookDeliveryStore } from "./webhook/store.js";
 
 const syncOrdersBodySchema = z.object({
@@ -58,6 +59,8 @@ export type CreateAppOptions = {
   webhookStore: WebhookDeliveryStore;
   /** When both user + password set, webhook endpoint requires Basic auth. */
   webhookBasicAuth?: { user: string; password: string };
+  /** Optional HMAC signature verification for Commerce7/provider-specific webhook signing. */
+  webhookSignature?: WebhookSignatureConfig;
   /** Commerce7 Install / Uninstall URL targets (ADC Step 4 Installation). */
   lifecycle?: {
     store: AppInstallStore;
@@ -80,8 +83,17 @@ export type CreateAppOptions = {
 };
 
 export function createApp(options: CreateAppOptions): Hono {
-  const { env, webhookStore, sync, webhookBasicAuth, analytics, oauth, lifecycle, internalApiToken } =
-    options;
+  const {
+    env,
+    webhookStore,
+    sync,
+    webhookBasicAuth,
+    webhookSignature,
+    analytics,
+    oauth,
+    lifecycle,
+    internalApiToken,
+  } = options;
   const app = new Hono();
 
   app.use("*", logger());
@@ -138,6 +150,17 @@ export function createApp(options: CreateAppOptions): Hono {
     const raw = await c.req.text();
     if (raw.length > 1_000_000) {
       return c.json({ error: "payload_too_large" }, 413);
+    }
+
+    if (webhookSignature) {
+      const ok = verifyWebhookSignature(
+        raw,
+        c.req.header(webhookSignature.headerName),
+        webhookSignature,
+      );
+      if (!ok) {
+        return c.json({ error: "invalid_signature" }, 401);
+      }
     }
 
     let json: unknown;

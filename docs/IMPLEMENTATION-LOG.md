@@ -21,10 +21,11 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 15 | **`POST /v1/app-sync`** (push status to Commerce7 Admin on an object) | Done | `c7/app-sync-schema.ts`, `http-client.ts`, `app-sync-route.test.ts`, `v1-chain` |
 | 16 | **`GET /v1/account/user`** (proxy extension `account` / `appToken` JWT) | Done | `account-user-route.test.ts`, `http-client.test.ts`, `v1-chain` |
 | 17 | **Integration console UI** (`apps/web`, `/` + `/app`) | Done | Manual sandbox QA — [`SANDBOX-TOMORROW.md`](SANDBOX-TOMORROW.md) |
+| 18 | **Production gates + scheduled reconcile** | Done | HMAC webhook verifier (`webhook/signature.test.ts`), production env guards, active-install reconcile worker (`reconcile-scheduler.test.ts`), Next.js security headers |
 
-**Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, hardened extension UI (CSP, etc.). Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
+**Still not production-complete (see `HANDOFF.md`):** real ADC credentials/sandbox values, end-to-end confirmation of webhook security settings, and product-specific extension UI work beyond the integration console. Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
 
-**Still optional:** Commerce7-specific **webhook signing** beyond HTTP Basic (ADC “Advanced”).
+**Webhook security:** Commerce7 mirrored docs in this repo document ADC “Advanced” HTTP Basic. The API also supports configurable HMAC verification for environments that expose a signing secret/header. Production boot requires **either** webhook Basic Auth or **`WEBHOOK_SIGNATURE_SECRET`**, plus **`INTERNAL_API_TOKEN`** for operator routes.
 
 See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 
@@ -42,6 +43,12 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 | POST | `/reconcile/orders` | `{ tenantId }` — `synced_orders` count vs fresh API walk (Bearer if configured) |
 | POST | `/v1/app-sync` | `tenantId` + ADC app-sync fields — forwards to Commerce7 **`POST /app-sync`** (Bearer if `INTERNAL_API_TOKEN` set); requires `sync` / client wired |
 | POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured) |
+
+### Scheduled reconcile worker
+
+Set `ENABLE_SCHEDULED_RECONCILE=1` to run the in-process worker from `apps/api/src/index.ts`.
+It lists active installs from `app_installs`, runs order sync batches for each tenant, and then runs the existing reconcile check.
+Tune `RECONCILE_INTERVAL_MS` and `RECONCILE_MAX_SYNC_BATCHES_PER_TENANT` for production load. Use an external cron/queue instead if your hosting platform does not keep API processes warm.
 
 ### Extension JWT (`GET /v1/account/user`)
 

@@ -48,18 +48,19 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 **Already implemented (V1 backbone):**
 
 - API: `GET /health`, `GET /`, **`GET /oauth/callback`** (stub: persists raw query when **`oauth_sessions`** store is wired and `tenantId` is present).
-- API: **`POST /webhooks/commerce7`** — Zod body, **idempotent** deliveries; **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set (run **`pnpm --filter @commerce7/api db:migrate`**). Optional **HTTP Basic** gate when **`WEBHOOK_BASIC_USER`** + **`WEBHOOK_BASIC_PASSWORD`** are both set (ADC “Advanced”).
+- API: **`POST /webhooks/commerce7`** — Zod body, **idempotent** deliveries; **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set (run **`pnpm --filter @commerce7/api db:migrate`**). Optional **HTTP Basic** gate when **`WEBHOOK_BASIC_USER`** + **`WEBHOOK_BASIC_PASSWORD`** are both set (ADC “Advanced”). Optional HMAC verification via **`WEBHOOK_SIGNATURE_SECRET`**, **`WEBHOOK_SIGNATURE_HEADER`**, and **`WEBHOOK_SIGNATURE_ALGORITHM`** if your ADC/app configuration exposes a signing secret/header. Production boot requires either Basic Auth or HMAC webhook verification.
 - API: **`POST /sync/orders`** — cursor sync using **`MockCommerce7Client`** or **`HttpCommerce7Client`** (`COMMERCE7_CLIENT_ID` + **`COMMERCE7_CLIENT_SECRET`**; optional **`COMMERCE7_USE_MOCK=1`** to force mock). **`sync_state`** + optional **`synced_orders`** persistence. Optional **`INTERNAL_API_TOKEN`** — when set, requires **`Authorization: Bearer …`** on **sync / reconcile / analytics / app-sync**.
 - API: **`POST /reconcile/orders`** — compares **`synced_orders`** count to a fresh full API walk (needs Postgres order persistence + HTTP client).
 - API: **`POST /v1/app-sync`** — validated proxy to Commerce7 **[App Sync](https://developer.commerce7.com/docs/app-apis-webhooks#2-app-sync)** (`POST /app-sync`); same optional **`INTERNAL_API_TOKEN`** Bearer gate as sync/reconcile/analytics. Registered only when **`sync`** (Commerce7 client) is configured.
 - API: **`POST /v1/events`** — idempotent analytics sink (**`tenantId` + `clientEventId`**, 64KB max); optional **`INTERNAL_API_TOKEN`** Bearer gate.
 - API: **`GET /v1/account/user`** — proxies Commerce7 **[GET /account/user](https://developer.commerce7.com/docs/authenticate-app)** for Admin extension **`account`** (or storefront **`appToken`**) JWT validation. Query **`tenantId`**, header **`Authorization`** = token string from Commerce7 (often **raw JWT**, not necessarily `Bearer …`). **Not** gated by **`INTERNAL_API_TOKEN`**. Requires **`sync`** client (same as other C7 routes in this app).
 - API: **`POST /lifecycle/install`** and **`POST /lifecycle/uninstall`** — targets for Commerce7 ADC **Install URL** / **Uninstall URL** (JSON or form body); persisted in **`app_installs`**. Optional **`LIFECYCLE_BASIC_USER`** + **`LIFECYCLE_BASIC_PASSWORD`** (ADC Installation security).
+- API worker: optional in-process scheduled reconcile via **`ENABLE_SCHEDULED_RECONCILE=1`**. The worker lists active **`app_installs`**, runs order sync batches up to **`RECONCILE_MAX_SYNC_BATCHES_PER_TENANT`**, then runs the existing count reconcile and logs mismatches/errors every **`RECONCILE_INTERVAL_MS`**.
 - Web: **Next.js Integration console** at **`apps/web`** (`/` and **`/app`**) — exercise health, extension JWT validation, sync/reconcile (with operator token), webhooks. See **`docs/SANDBOX-TOMORROW.md`**. Run **`pnpm dev:all`**. Local env: **`apps/web/.env.example`**.
 
 **Not production-complete (next):**
 
-- Commerce7-specific **webhook signing** if Basic is not used; **extension UI** / hardening beyond **`GET /v1/account/user`** gateway; scheduled reconciliation / broker per brief. See **`docs/IMPLEMENTATION-LOG.md`**. (**`INTERNAL_API_TOKEN`** already gates operator-only routes when configured.)
+- Real Commerce7 ADC/sandbox values and end-to-end confirmation of the selected webhook security mode; extension UI product hardening beyond the integration console; an external durable job runner if you do not want the API process to host scheduled reconcile. See **`docs/IMPLEMENTATION-LOG.md`**. (**`INTERNAL_API_TOKEN`** is required in production and gates operator-only routes.)
 
 Background reading for ordering work: **`docs/EXECUTION-PLAYBOOK.md`**.
 

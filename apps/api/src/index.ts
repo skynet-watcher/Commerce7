@@ -11,6 +11,7 @@ import { loadEnv, type Env } from "./env.js";
 import { InMemoryAppInstallStore, PgAppInstallStore, type AppInstallStore } from "./lifecycle/install-store.js";
 import { InMemoryOAuthSessionStore, PgOAuthSessionStore, type OAuthSessionStore } from "./oauth/oauth-store.js";
 import { InMemoryOrderRefPersistence, PgOrderRefPersistence } from "./sync/order-persistence.js";
+import { startReconcileScheduler } from "./sync/reconcile-scheduler.js";
 import { InMemorySyncStateStore, PgSyncStateStore, type SyncStateStore } from "./sync/sync-state.js";
 import { PgWebhookDeliveryStore } from "./webhook/pg-store.js";
 import { InMemoryWebhookDeliveryStore } from "./webhook/store.js";
@@ -109,6 +110,13 @@ const app = createApp({
   env,
   webhookStore,
   webhookBasicAuth,
+  webhookSignature: env.WEBHOOK_SIGNATURE_SECRET
+    ? {
+        secret: env.WEBHOOK_SIGNATURE_SECRET,
+        headerName: env.WEBHOOK_SIGNATURE_HEADER,
+        algorithm: env.WEBHOOK_SIGNATURE_ALGORITHM,
+      }
+    : undefined,
   internalApiToken: env.INTERNAL_API_TOKEN,
   lifecycle: { store: appInstallStore, basicAuth: lifecycleBasicAuth },
   sync: {
@@ -120,6 +128,17 @@ const app = createApp({
   analytics: { store: analyticsStore },
   oauth: { store: oauthStore },
 });
+
+if (env.ENABLE_SCHEDULED_RECONCILE === "1") {
+  startReconcileScheduler({
+    installStore: appInstallStore,
+    client: commerce7Client,
+    syncState: syncStateStore,
+    orderPersistence,
+    intervalMs: env.RECONCILE_INTERVAL_MS,
+    maxSyncBatchesPerTenant: env.RECONCILE_MAX_SYNC_BATCHES_PER_TENANT,
+  });
+}
 
 const port = env.PORT;
 
