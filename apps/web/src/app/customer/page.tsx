@@ -1,5 +1,5 @@
 const setupChecks = [
-  ["Cart Carrots", "Not found", "Chad can create the first one"],
+  ["Cart Carrots", "Not found", "The advisor can create the first one"],
   ["Free shipping promotion", "Likely available", "Use bottle-count carrot"],
   ["Personalization block", "Needs code", "Prepare options for designer"],
   ["Club data", "Available", "Use club-member incentive"],
@@ -52,9 +52,9 @@ export default function CustomerDashboard() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase text-[#0079a9]">
-              Proposal 2 - Chad - review only
+              Proposal 2 - review only
             </p>
-            <h1 className="mt-2 text-3xl font-extrabold">Let Chad set up the next best move</h1>
+            <h1 className="mt-2 text-3xl font-extrabold">Set up the next best move</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5b6c78]">
               This proposal turns the app into a plain-English setup assistant. The winery
               sees one recommended action, a pre-filled Commerce7 strategy, and a safe button
@@ -75,7 +75,7 @@ export default function CustomerDashboard() {
       <div className="grid gap-5 px-7 py-5 xl:grid-cols-[1.35fr_0.95fr]">
         <section className="border border-[#cbd8e2] bg-white">
           <div className="border-b border-[#cbd8e2] p-5">
-            <p className="text-xs font-bold uppercase text-[#0079a9]">Chad recommends</p>
+            <p className="text-xs font-bold uppercase text-[#0079a9]">Recommended setup</p>
             <h2 className="mt-2 text-2xl font-extrabold">{recommendedPlan.name}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5b6c78]">
               {recommendedPlan.goal} This is based on Commerce7's basic Cart Carrot pattern:
@@ -91,7 +91,7 @@ export default function CustomerDashboard() {
               <Info label="Type" value={recommendedPlan.type} />
               <Info label="Why this first" value="Easy to understand, promotion-driven, and useful even for wineries with no personalization history." />
               <div className="border border-[#cbd8e2] bg-[#f8fafb] p-4">
-                <p className="text-xs font-bold uppercase text-[#687a87]">Chad will check</p>
+                <p className="text-xs font-bold uppercase text-[#687a87]">Before pushing, check</p>
                 <ul className="mt-2 space-y-2 text-sm leading-5">
                   <li>Whether a free-shipping promotion exists.</li>
                   <li>The bottle threshold, usually 6 or 12.</li>
@@ -120,7 +120,7 @@ export default function CustomerDashboard() {
                 />
               </label>
               <div className="mt-3 border border-[#cbd8e2] bg-white p-3">
-                <p className="text-xs font-bold uppercase text-[#687a87]">Conditions Chad will push</p>
+                <p className="text-xs font-bold uppercase text-[#687a87]">Conditions to push</p>
                 <ul className="mt-2 space-y-1 text-sm leading-5">
                   {recommendedPlan.conditions.map((condition) => <li key={condition}>{condition}</li>)}
                 </ul>
@@ -130,7 +130,7 @@ export default function CustomerDashboard() {
                   Review and push to Commerce7
                 </button>
                 <button className="border border-[#087fa8] px-5 py-3 text-sm font-bold text-[#087fa8]">
-                  Let Chad adjust copy
+                  Adjust copy
                 </button>
               </div>
               <p className="mt-3 text-xs leading-5 text-[#5b6c78]">{recommendedPlan.apiAction}</p>
@@ -141,7 +141,7 @@ export default function CustomerDashboard() {
         <aside className="space-y-5">
           <section className="border border-[#cbd8e2] bg-white p-5">
             <p className="text-xs font-bold uppercase text-[#0079a9]">Setup scan</p>
-            <h2 className="mt-2 text-xl font-extrabold">What Chad found</h2>
+            <h2 className="mt-2 text-xl font-extrabold">What the setup scan found</h2>
             <div className="mt-4 space-y-3">
               {setupChecks.map(([label, status, action]) => (
                 <div className="border border-[#cbd8e2] bg-[#f8fafb] p-3" key={label}>
@@ -173,9 +173,9 @@ export default function CustomerDashboard() {
         <section className="border border-[#cbd8e2] bg-white xl:col-span-2">
           <div className="border-b border-[#cbd8e2] p-5">
             <p className="text-xs font-bold uppercase text-[#0079a9]">Personalization starter pack</p>
-            <h2 className="mt-2 text-2xl font-extrabold">If they want personalization, Chad builds the journey</h2>
+            <h2 className="mt-2 text-2xl font-extrabold">If they want personalization, build the journey</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5b6c78]">
-              Commerce7's templates map naturally to the customer journey. Chad should generate
+              Commerce7's templates map naturally to the customer journey. The assistant should generate
               the block options, plain-English copy, and designer handoff code so the winery does
               not have to understand targeting logic.
             </p>
@@ -225,7 +225,7 @@ export default function CustomerDashboard() {
                     Put tables, confidence, attribution, and raw performance detail in this drawer.
                   </p>
                   <p className="border border-[#cbd8e2] bg-[#f8fafb] p-4">
-                    For launch, Chad can support three push actions: basic free-shipping carrot,
+                    For launch, the workflow can support three push actions: basic free-shipping carrot,
                     product upsell carrot, and personalization option draft. Dynamic Product Upsell
                     is the safest fallback when product matching is unclear.
                   </p>
