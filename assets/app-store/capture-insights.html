@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #0f1c24;
+        color: #eef5f8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        width: 1600px;
+        height: 900px;
+        overflow: hidden;
+        background: #0f1c24;
+      }
+
+      .page {
+        width: 1240px;
+        margin: 0 auto;
+        padding: 36px 0 44px;
+      }
+
+      .eyebrow {
+        color: #42bde3;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 8px 0 4px;
+        font-size: 32px;
+        line-height: 1.15;
+      }
+
+      .muted {
+        color: #9fb5c2;
+      }
+
+      .section {
+        margin-top: 24px;
+        border: 1px solid #2f4654;
+        background: #162832;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 22px 24px;
+        border-bottom: 1px solid #2f4654;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .small-pill {
+        border: 1px solid #2f4654;
+        background: #1d3442;
+        color: #9fb5c2;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        padding: 10px 14px;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        padding: 22px 24px 24px;
+      }
+
+      .card {
+        border: 1px solid #2f4654;
+        background: #1b313d;
+        padding: 20px;
+        min-height: 214px;
+      }
+
+      .label {
+        color: #9fb5c2;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .confidence {
+        display: inline-block;
+        margin-top: 14px;
+        border: 1px solid #4ba86d;
+        background: #163b2a;
+        color: #8fe6ad;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 7px 9px;
+      }
+
+      .observation {
+        margin: 14px 0 0;
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .try {
+        margin: 12px 0 0;
+        color: #c9d7df;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .button {
+        display: inline-block;
+        margin-top: 16px;
+        background: #42a8cf;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 800;
+        padding: 11px 14px;
+      }
+
+      .strategy-card {
+        min-height: 260px;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .metric {
+        border: 1px solid #2f4654;
+        background: #162832;
+        padding: 12px;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 5px;
+        font-size: 24px;
+      }
+
+      .summary {
+        margin-top: 16px;
+        color: #eef5f8;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .bar {
+        display: block;
+        width: 100%;
+        height: 7px;
+        margin-top: 14px;
+        background: #253c49;
+      }
+
+      .bar span {
+        display: block;
+        height: 100%;
+        background: #22c9a4;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="eyebrow">Analytics by Chat Through Automations</div>
+      <h1>Insights and running strategies</h1>
+      <p class="muted">Plain-English recommendations for Commerce7 merchants based on shopper activity and observed purchase signals.</p>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Insights</h2>
+            <p class="muted">Recommended strategies appear after enough shopper activity and observed purchases.</p>
+          </div>
+          <div class="small-pill">259 observed purchases · 3,074 shopper events</div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <div class="label">Observation</div>
+            <p class="observation">Cart Carrot is producing a strong early revenue signal per 1,000 views.</p>
+            <p class="try"><strong>Try this:</strong> give Cart Carrot one more high-traffic placement and compare performance against the current placement.</p>
+            <span class="confidence">High confidence · based on 157 transactions</span>
+            <span class="button">I’m using this strategy</span>
+          </article>
+
+          <article class="card">
+            <div class="label">Observation</div>
+            <p class="observation">Personalization blocks are converting well once shoppers interact with them.</p>
+            <p class="try"><strong>Try this:</strong> keep the current offer running and send it more traffic before changing the message.</p>
+            <span class="confidence">High confidence · based on 102 transactions</span>
+            <span class="button">I’m using this strategy</span>
+          </article>
+
+          <article class="card">
+            <div class="label">Suggested run length</div>
+            <p class="observation">A 7-day read should produce enough activity for a directional result.</p>
+            <p class="try">Based on recent volume, that should produce about 700 shopper events and 63 observed purchases.</p>
+            <span class="bar"><span style="width: 74%"></span></span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Running strategies</h2>
+            <p class="muted">Each strategy starts with a baseline snapshot, then reports what changed from that point forward.</p>
+          </div>
+          <div class="small-pill">2 active strategies</div>
+        </div>
+
+        <div class="grid">
+          <article class="card strategy-card">
+            <div class="label">Running · Review today</div>
+            <p class="observation">Add a second Cart Carrot placement on a high-traffic product page.</p>
+            <div class="metric-grid">
+              <div class="metric"><span class="label">Events</span><strong>1,356</strong></div>
+              <div class="metric"><span class="label">Purchases</span><strong>113</strong></div>
+              <div class="metric"><span class="label">Revenue</span><strong>$11.9k</strong></div>
+            </div>
+            <p class="summary">Early result is improving. Add-to-cart rate moved from 53% to 62% since the strategy started.</p>
+          </article>
+
+          <article class="card strategy-card">
+            <div class="label">Running · Review in 2 days</div>
+            <p class="observation">Keep the personalization block live and send more traffic to it.</p>
+            <div class="metric-grid">
+              <div class="metric"><span class="label">Events</span><strong>998</strong></div>
+              <div class="metric"><span class="label">Purchases</span><strong>76</strong></div>
+              <div class="metric"><span class="label">Revenue</span><strong>$8.0k</strong></div>
+            </div>
+            <p class="summary">The strategy is on track for a meaningful read. Keep it running through the review date.</p>
+          </article>
+
+          <article class="card strategy-card">
+            <div class="label">Strategy brief</div>
+            <p class="observation">Start date, review date, baseline, and expected purchase volume are saved with each strategy.</p>
+            <p class="try">Owners can come back after the review window and see what changed without having to interpret raw event logs.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
