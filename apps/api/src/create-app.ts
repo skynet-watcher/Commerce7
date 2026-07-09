@@ -58,21 +58,24 @@ function denyUnlessInternalBearer(c: Context, token: string | undefined) {
   return undefined;
 }
 
-function corsOrigins(env: Env): string | string[] {
+function corsOrigins(env: Env): string | string[] | ((origin: string) => string | undefined) {
   if (!env.APP_BASE_URL) {
     return "*";
   }
   if (env.NODE_ENV !== "development") {
     return env.APP_BASE_URL;
   }
-  return Array.from(
-    new Set([
-      env.APP_BASE_URL,
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://[::1]:3000",
-    ]),
-  );
+  const staticOrigins = new Set([
+    env.APP_BASE_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://[::1]:3000",
+  ]);
+  return (origin: string) => {
+    if (staticOrigins.has(origin)) return origin;
+    if (/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/i.test(origin)) return origin;
+    return undefined;
+  };
 }
 
 function toInstallWrite(parsed: z.infer<typeof installBodySchema>): AppInstallWrite {
@@ -352,10 +355,11 @@ export function createApp(options: CreateAppOptions): Hono {
 
   if (analytics?.store) {
     const store = analytics.store;
-    // 120 events per minute per tenantId — generous for legitimate collectors,
-    // tight enough to prevent store flooding from a single misconfigured client.
+    // 120 events per minute per tenantId in production — generous for legitimate
+    // collectors, tight enough to prevent store flooding from a misconfigured client.
+    // In development the limit is lifted so seed scripts can run without throttling.
     const eventsRateLimit = rateLimitMiddleware(
-      120,
+      env.NODE_ENV === "development" ? 100_000 : 120,
       60_000,
       (c) => c.req.query("tenantId") ?? "unknown",
     );

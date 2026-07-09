@@ -39,6 +39,7 @@ describe("POST /lifecycle/install and /uninstall", () => {
     expect(row?.installerEmail).toBe("a@example.com");
     expect(row?.raw).toMatchObject({ mode: "live" });
     expect(row?.uninstalledAt).toBeNull();
+    expect(await store.listActiveTenantIds()).toEqual(["wine-co"]);
 
     const un = await app.request("http://localhost/lifecycle/uninstall", {
       method: "POST",
@@ -47,6 +48,7 @@ describe("POST /lifecycle/install and /uninstall", () => {
     });
     expect(un.status).toBe(200);
     expect((await store.getInstall("wine-co"))?.uninstalledAt).not.toBeNull();
+    expect(await store.listActiveTenantIds()).toEqual([]);
   });
 
   it("accepts form-encoded install bodies", async () => {

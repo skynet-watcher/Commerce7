@@ -13,9 +13,15 @@ const schema = z
     DATABASE_URL: z.string().min(1).optional(),
     APP_BASE_URL: z.string().url().optional(),
     OAUTH_REDIRECT_URL: z.string().url().optional(),
+    OAUTH_TOKEN_URL: z.string().url().optional(),
+    OAUTH_CLIENT_ID: z.string().optional(),
+    OAUTH_CLIENT_SECRET: z.string().optional(),
     COMMERCE7_CLIENT_ID: z.string().optional(),
     COMMERCE7_CLIENT_SECRET: z.string().optional(),
     COMMERCE7_API_BASE: z.string().url().default("https://api.commerce7.com/v1"),
+    BACKGROUND_SYNC_TENANTS: z.string().optional(),
+    BACKGROUND_SYNC_INCLUDE_INSTALLS: z.enum(["0", "1"]).default("0"),
+    BACKGROUND_SYNC_INTERVAL_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
     /** Set to `1` to force mock Commerce7 client even when API credentials exist (never in production). */
     COMMERCE7_USE_MOCK: z.enum(["0", "1"]).optional(),
     /** When set, `POST /webhooks/commerce7` requires matching `Authorization: Basic …` (ADC Advanced webhook auth). */

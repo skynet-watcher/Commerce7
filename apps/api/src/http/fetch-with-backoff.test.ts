@@ -26,4 +26,15 @@ describe("fetchWithBackoff", () => {
     expect(res.status).toBe(200);
     expect(fetch).toHaveBeenCalledTimes(2);
   });
+
+  it("retries transient fetch failures", async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    const res = await fetchWithBackoff("https://example.com/test", {}, { initialDelayMs: 2, maxAttempts: 3 });
+    expect(res.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
 });

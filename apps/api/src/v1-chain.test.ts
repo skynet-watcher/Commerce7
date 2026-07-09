@@ -133,6 +133,30 @@ describe("V1 interconnection (in-memory)", () => {
     expect(evDup.status).toBe(200);
     expect(((await evDup.json()) as { duplicate: boolean }).duplicate).toBe(true);
 
+    const evCarrotClick = await app.request("http://localhost/v1/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId: tenant,
+        clientEventId: "evt-carrot-click",
+        name: "click",
+        properties: { surface: "cart_carrot", elementId: "demo-carrot" },
+      }),
+    });
+    expect(evCarrotClick.status).toBe(200);
+
+    const evCarrotAtc = await app.request("http://localhost/v1/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId: tenant,
+        clientEventId: "evt-carrot-atc",
+        name: "add_to_cart",
+        properties: { surface: "cart_carrot", elementId: "demo-carrot" },
+      }),
+    });
+    expect(evCarrotAtc.status).toBe(200);
+
     const cb = await app.request(
       `http://localhost/oauth/callback?tenantId=${encodeURIComponent(tenant)}&code=stub-code`,
     );
@@ -162,5 +186,25 @@ describe("V1 interconnection (in-memory)", () => {
     expect(r2.status).toBe(200);
     expect(((await r2.json()) as { duplicate: boolean }).duplicate).toBe(true);
     expect(store.size()).toBe(1);
+
+    const overview = await app.request(
+      `http://localhost/v1/insights/overview?tenantId=${encodeURIComponent(tenant)}`,
+    );
+    expect(overview.status).toBe(200);
+    const ov = (await overview.json()) as {
+      orders: { cursorWalkTotal: number; ok: boolean };
+      analytics: {
+        totalEvents: number;
+        byName: Record<string, number>;
+        cartCarrot: { total: number; byEventName: Record<string, number> };
+      };
+    };
+    expect(ov.orders.ok).toBe(true);
+    expect(ov.orders.cursorWalkTotal).toBe(3);
+    expect(ov.analytics.totalEvents).toBe(3);
+    expect(ov.analytics.byName.page_view).toBe(1);
+    expect(ov.analytics.cartCarrot.total).toBe(2);
+    expect(ov.analytics.cartCarrot.byEventName.click).toBe(1);
+    expect(ov.analytics.cartCarrot.byEventName.add_to_cart).toBe(1);
   });
 });

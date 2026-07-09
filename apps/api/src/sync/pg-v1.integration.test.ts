@@ -49,6 +49,10 @@ describe.skipIf(!testDbUrl)("Postgres V1 tables (integration)", () => {
     expect((await analytics.record({ tenantId: tenant, clientEventId: "e1", body })).duplicate).toBe(false);
     expect((await analytics.record({ tenantId: tenant, clientEventId: "e1", body })).duplicate).toBe(true);
 
+    const summary = await analytics.summarizeTenant(tenant);
+    expect(summary.totalEvents).toBe(1);
+    expect(summary.byName.test).toBe(1);
+
     await oauth.saveCallbackStub({
       tenantId: tenant,
       code: "c",

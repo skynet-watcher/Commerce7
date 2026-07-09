@@ -31,9 +31,22 @@ export async function fetchWithBackoff(
   let attempt = 0;
   let delay = initial;
   let last: Response | undefined;
+  let lastError: unknown;
 
   while (attempt < maxAttempts) {
-    last = await fetch(input, init);
+    try {
+      last = await fetch(input, init);
+    } catch (error) {
+      lastError = error;
+      attempt += 1;
+      if (attempt >= maxAttempts) {
+        throw error;
+      }
+      const wait = jitter(Math.min(delay, maxDelay));
+      await sleep(wait);
+      delay = Math.min(delay * 2, maxDelay);
+      continue;
+    }
     if (last.status !== 429 && last.status !== 503) {
       return last;
     }
@@ -45,5 +58,6 @@ export async function fetchWithBackoff(
     await sleep(wait);
     delay = Math.min(delay * 2, maxDelay);
   }
-  return last!;
+  if (last) return last;
+  throw lastError;
 }

@@ -16,6 +16,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --if-present test",
+    "sandbox:smoke:memory": "node scripts/sandbox-memory-smoke.mjs",
     "v1:pipeline": "bash scripts/v1-pipeline.sh"
   }
 }
