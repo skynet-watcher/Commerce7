@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHmac } from "node:crypto";
 
 import { createApp } from "../create-app.js";
 import { loadEnv } from "../env.js";
@@ -77,5 +78,44 @@ describe("POST /webhooks/commerce7", () => {
     });
 
     expect(store.size()).toBe(2);
+  });
+
+  it("requires configured webhook signature before parsing", async () => {
+    const store = new InMemoryWebhookDeliveryStore();
+    const secret = "webhook-secret";
+    const app = createApp({
+      env: loadEnv(),
+      webhookStore: store,
+      webhookSignature: {
+        secret,
+        headerName: "x-commerce7-signature",
+        algorithm: "sha256",
+      },
+    });
+    const raw = JSON.stringify({
+      object: "Order",
+      action: "Update",
+      payload: { id: "o1", updatedAt: "2024-01-01T00:00:00.000Z" },
+      tenantId: "tenant-a",
+    });
+    const signature = createHmac("sha256", secret).update(raw, "utf8").digest("hex");
+
+    const denied = await app.request("http://localhost/webhooks/commerce7", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: raw,
+    });
+    expect(denied.status).toBe(401);
+
+    const accepted = await app.request("http://localhost/webhooks/commerce7", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-commerce7-signature": `sha256=${signature}`,
+      },
+      body: raw,
+    });
+    expect(accepted.status).toBe(200);
+    expect(store.size()).toBe(1);
   });
 });

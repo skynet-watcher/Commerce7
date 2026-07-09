@@ -23,10 +23,11 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 17 | **Integration console UI** (`apps/web`, `/` + `/app`) | Done | Manual sandbox QA — [`SANDBOX-TOMORROW.md`](SANDBOX-TOMORROW.md) |
 | 18 | **Analytics by `properties.surface` + `GET /v1/insights/overview` + Cart Carrot / personalization dashboard** (`/dashboard`) | Done | `events/analytics-contract.ts`, `events/analytics-store.ts`, `insights/*`, `insights-route.test.ts`, `events/analytics-store.test.ts`, `apps/web/src/app/dashboard`, `v1-chain` |
 | 19 | **Background order sync runner + merchant controls** | Done | `sync/background-scheduler.ts`, `GET /v1/sync/status`, `POST /v1/sync/run`, explicit tenant env, active-install discovery, `sync-route.test.ts`, `integration-console.tsx` |
+| 20 | **Production gates + scheduled reconcile** | Done | Configurable HMAC webhook verifier (`webhook/signature.test.ts`), production env guards, active-install reconcile worker (`reconcile-scheduler.test.ts`), Next.js security headers |
 
-**Still not production-complete (see `HANDOFF.md`):** hosted durable scheduler / queue, encrypted token storage, hardened extension UI (CSP, etc.). Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
+**Still not production-complete (see `HANDOFF.md`):** hosted durable scheduler / queue, encrypted token storage, end-to-end confirmation of webhook security settings in ADC, and hardened extension UI beyond the current dashboard/console. Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
 
-**Still optional:** Commerce7-specific **webhook signing** beyond HTTP Basic (ADC “Advanced”).
+**Webhook security:** Commerce7 mirrored docs in this repo document ADC “Advanced” HTTP Basic. The API also supports configurable HMAC verification for environments that expose a signing secret/header. Production boot requires **either** webhook Basic Auth or **`WEBHOOK_SIGNATURE_SECRET`**, plus **`INTERNAL_API_TOKEN`** for operator routes.
 
 See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 
@@ -48,6 +49,12 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 | POST | `/v1/app-sync` | `tenantId` + ADC app-sync fields — forwards to Commerce7 **`POST /app-sync`** (Bearer if `INTERNAL_API_TOKEN` set); requires `sync` / client wired |
 | GET | **`/v1/insights/overview`** | **`?tenantId=`** — Cart Carrot / personalization aggregates from **`/v1/events`** (by `properties.surface`), order-walk context, conversion-like event counts; **session→order attribution not computed here**. Bearer if `INTERNAL_API_TOKEN` set; requires **`sync`** + **`analytics`** stores |
 | POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured). Tag Cart Carrot / blocks with **`properties.surface`**: `cart_carrot` \| `personalization_block`; use **`name`** for funnel steps (`click`, `add_to_cart`, `purchase`, …). See `events/analytics-contract.ts`. |
+
+### Scheduled reconcile worker
+
+Set `ENABLE_SCHEDULED_RECONCILE=1` to run the in-process worker from `apps/api/src/index.ts`.
+It lists active installs from `app_installs`, runs order sync batches for each tenant, and then runs the existing reconcile check.
+Tune `RECONCILE_INTERVAL_MS` and `RECONCILE_MAX_SYNC_BATCHES_PER_TENANT` for production load. Use an external cron/queue instead if your hosting platform does not keep API processes warm.
 
 ### Extension JWT (`GET /v1/account/user`)
 

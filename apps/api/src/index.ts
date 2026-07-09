@@ -15,6 +15,7 @@ import {
   startBackgroundOrderSyncScheduler,
 } from "./sync/background-scheduler.js";
 import { InMemoryOrderRefPersistence, PgOrderRefPersistence } from "./sync/order-persistence.js";
+import { startReconcileScheduler } from "./sync/reconcile-scheduler.js";
 import { InMemorySyncStateStore, PgSyncStateStore, type SyncStateStore } from "./sync/sync-state.js";
 import { PgWebhookDeliveryStore } from "./webhook/pg-store.js";
 import { InMemoryWebhookDeliveryStore } from "./webhook/store.js";
@@ -128,7 +129,13 @@ const app = createApp({
   env,
   webhookStore,
   webhookBasicAuth,
-  webhookHmacSecret: env.COMMERCE7_CLIENT_SECRET,
+  webhookSignature: env.WEBHOOK_SIGNATURE_SECRET
+    ? {
+        secret: env.WEBHOOK_SIGNATURE_SECRET,
+        headerName: env.WEBHOOK_SIGNATURE_HEADER,
+        algorithm: env.WEBHOOK_SIGNATURE_ALGORITHM,
+      }
+    : undefined,
   internalApiToken: env.INTERNAL_API_TOKEN,
   lifecycle: { store: appInstallStore, basicAuth: lifecycleBasicAuth },
   sync: {
@@ -166,6 +173,17 @@ if (backgroundSyncTenants.length > 0 || backgroundSyncIncludesInstalls) {
   console.log(
     `@commerce7/api background order sync scheduled for ${sourceLabel} every ${env.BACKGROUND_SYNC_INTERVAL_MS}ms`,
   );
+}
+
+if (env.ENABLE_SCHEDULED_RECONCILE === "1") {
+  startReconcileScheduler({
+    installStore: appInstallStore,
+    client: commerce7Client,
+    syncState: syncStateStore,
+    orderPersistence,
+    intervalMs: env.RECONCILE_INTERVAL_MS,
+    maxSyncBatchesPerTenant: env.RECONCILE_MAX_SYNC_BATCHES_PER_TENANT,
+  });
 }
 
 const port = env.PORT;

@@ -25,9 +25,9 @@ import type { OrderRefPersistence } from "./sync/order-persistence.js";
 import { runOrderSyncStep, type SyncStateStore } from "./sync/sync-state.js";
 import { rateLimitMiddleware } from "./middleware/rate-limit.js";
 import { verifyWebhookBasicAuth } from "./webhook/basic-auth.js";
-import { verifyWebhookSignature } from "./webhook/hmac.js";
 import { deriveWebhookIdempotencyKey } from "./webhook/idempotency.js";
 import { commerce7WebhookBodySchema } from "./webhook/schema.js";
+import { verifyWebhookSignature, type WebhookSignatureConfig } from "./webhook/signature.js";
 import type { WebhookDeliveryStore } from "./webhook/store.js";
 
 const syncOrdersBodySchema = z.object({
@@ -94,12 +94,8 @@ export type CreateAppOptions = {
   webhookStore: WebhookDeliveryStore;
   /** When both user + password set, webhook endpoint requires Basic auth. */
   webhookBasicAuth?: { user: string; password: string };
-  /**
-   * When set, webhook deliveries are verified against an HMAC-SHA256 signature
-   * in the `X-C7-Signature` header. Pass `env.COMMERCE7_CLIENT_SECRET` here.
-   * Omit (or pass `undefined`) in tests to skip signature verification.
-   */
-  webhookHmacSecret?: string;
+  /** Optional HMAC signature verification for Commerce7/provider-specific webhook signing. */
+  webhookSignature?: WebhookSignatureConfig;
   /** Commerce7 Install / Uninstall URL targets (ADC Step 4 Installation). */
   lifecycle?: {
     store: AppInstallStore;
@@ -129,7 +125,7 @@ export function createApp(options: CreateAppOptions): Hono {
     webhookStore,
     sync,
     webhookBasicAuth,
-    webhookHmacSecret,
+    webhookSignature,
     analytics,
     oauth,
     lifecycle,
@@ -258,16 +254,19 @@ export function createApp(options: CreateAppOptions): Hono {
 
     const raw = await c.req.text();
 
-    // Verify HMAC-SHA256 signature when a client secret is configured.
-    // Skip silently when no secret is set (development / legacy deployments).
-    if (webhookHmacSecret) {
-      const sig = c.req.header("x-c7-signature");
-      if (!verifyWebhookSignature(raw, sig, webhookHmacSecret)) {
-        return c.json({ error: "invalid_signature" }, 401);
-      }
-    }
     if (raw.length > 1_000_000) {
       return c.json({ error: "payload_too_large" }, 413);
+    }
+
+    if (webhookSignature) {
+      const ok = verifyWebhookSignature(
+        raw,
+        c.req.header(webhookSignature.headerName),
+        webhookSignature,
+      );
+      if (!ok) {
+        return c.json({ error: "invalid_signature" }, 401);
+      }
     }
 
     let json: unknown;
