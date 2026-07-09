@@ -14,6 +14,8 @@ This document orients a new engineer on **what exists today**, **how to run it**
 6. **[`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`](docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md)** — storefront collector + Full App reports  
 7. **[`docs/README.md`](docs/README.md)** — mirrored Commerce7 guides index  
 8. **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** — access / first hour  
+9. **[`docs/SANDBOX-HUMAN-SETUP-PLAYBOOK.md`](docs/SANDBOX-HUMAN-SETUP-PLAYBOOK.md)** — Commerce7 ADC + tenant install (human-only steps, all URLs)  
+10. **[`docs/SANDBOX-HARDENING-LOG.md`](docs/SANDBOX-HARDENING-LOG.md)** — current sandbox setup, smoke tests, live-doc findings, and gaps  
 
 `main` on GitHub should always contain these; **clone/pull before starting**.
 
@@ -49,13 +51,14 @@ The business requirements should live in a copy of **`docs/PROJECT-BRIEF-TEMPLAT
 
 - API: `GET /health`, `GET /`, **`GET /oauth/callback`** (stub: persists raw query when **`oauth_sessions`** store is wired and `tenantId` is present).
 - API: **`POST /webhooks/commerce7`** — Zod body, **idempotent** deliveries; **`PgWebhookDeliveryStore`** when **`DATABASE_URL`** is set (run **`pnpm --filter @commerce7/api db:migrate`**). Optional **HTTP Basic** gate when **`WEBHOOK_BASIC_USER`** + **`WEBHOOK_BASIC_PASSWORD`** are both set (ADC “Advanced”).
-- API: **`POST /sync/orders`** — cursor sync using **`MockCommerce7Client`** or **`HttpCommerce7Client`** (`COMMERCE7_CLIENT_ID` + **`COMMERCE7_CLIENT_SECRET`**; optional **`COMMERCE7_USE_MOCK=1`** to force mock). **`sync_state`** + optional **`synced_orders`** persistence. Optional **`INTERNAL_API_TOKEN`** — when set, requires **`Authorization: Bearer …`** on **sync / reconcile / analytics / app-sync**.
+- API: **`POST /sync/orders`** — cursor sync using **`MockCommerce7Client`** or **`HttpCommerce7Client`** (`COMMERCE7_CLIENT_ID` + **`COMMERCE7_CLIENT_SECRET`**; optional **`COMMERCE7_USE_MOCK=1`** to force mock). **`sync_state`** + optional **`synced_orders`** persistence. Optional **`INTERNAL_API_TOKEN`** — when set, requires **`Authorization: Bearer …`** on **sync / reconcile / POST `/v1/events` / POST `/v1/app-sync` / `GET /v1/insights/overview`**.
 - API: **`POST /reconcile/orders`** — compares **`synced_orders`** count to a fresh full API walk (needs Postgres order persistence + HTTP client).
 - API: **`POST /v1/app-sync`** — validated proxy to Commerce7 **[App Sync](https://developer.commerce7.com/docs/app-apis-webhooks#2-app-sync)** (`POST /app-sync`); same optional **`INTERNAL_API_TOKEN`** Bearer gate as sync/reconcile/analytics. Registered only when **`sync`** (Commerce7 client) is configured.
-- API: **`POST /v1/events`** — idempotent analytics sink (**`tenantId` + `clientEventId`**, 64KB max); optional **`INTERNAL_API_TOKEN`** Bearer gate.
+- API: **`POST /v1/events`** — idempotent analytics sink (**`tenantId` + `clientEventId`**, 64KB max); optional **`INTERNAL_API_TOKEN`** Bearer gate. For **Cart Carrot** and **personalization / dynamic blocks**, set **`properties.surface`** to **`cart_carrot`** or **`personalization_block`** and use **`name`** for the funnel step (`impression`, `click`, `add_to_cart`, `purchase`, …). See **`apps/api/src/events/analytics-contract.ts`**.
+- API: **`GET /v1/insights/overview`** — read-only JSON for **`/dashboard`**: per-surface totals, Cart Carrot / personalization slices, “conversion-like” event counts (`purchase`, `order_completed`, …), plus Commerce7 order cursor-walk count for context. **True** “this click caused this order” attribution requires session → webhook join (not computed in this response yet). Same optional Bearer gate as sync when **`INTERNAL_API_TOKEN`** is set. Requires **`sync`** + **`analytics`** stores.
 - API: **`GET /v1/account/user`** — proxies Commerce7 **[GET /account/user](https://developer.commerce7.com/docs/authenticate-app)** for Admin extension **`account`** (or storefront **`appToken`**) JWT validation. Query **`tenantId`**, header **`Authorization`** = token string from Commerce7 (often **raw JWT**, not necessarily `Bearer …`). **Not** gated by **`INTERNAL_API_TOKEN`**. Requires **`sync`** client (same as other C7 routes in this app).
 - API: **`POST /lifecycle/install`** and **`POST /lifecycle/uninstall`** — targets for Commerce7 ADC **Install URL** / **Uninstall URL** (JSON or form body); persisted in **`app_installs`**. Optional **`LIFECYCLE_BASIC_USER`** + **`LIFECYCLE_BASIC_PASSWORD`** (ADC Installation security).
-- Web: **Next.js Integration console** at **`apps/web`** (`/` and **`/app`**) — exercise health, extension JWT validation, sync/reconcile (with operator token), webhooks. See **`docs/SANDBOX-TOMORROW.md`**. Run **`pnpm dev:all`**. Local env: **`apps/web/.env.example`**.
+- Web: **Next.js** at **`apps/web`** — **Integration console** (`/` and **`/app`**) for operators; **Cart Carrot / personalization analytics dashboard** at **`/dashboard`**. Run **`pnpm dev:all`**. Local env: **`apps/web/.env.example`**.
 
 **Not production-complete (next):**
 

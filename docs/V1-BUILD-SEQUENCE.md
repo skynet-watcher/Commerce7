@@ -29,13 +29,14 @@ This runs (see `scripts/v1-pipeline.sh`):
 | 4 | Mock / HTTP `Commerce7Client` + `sync_state` | `create-client.test.ts`, `http-client.test.ts` |
 | 5 | `synced_orders` + sync persistence | `run-order-sync.test.ts` |
 | 6 | `POST /reconcile/orders` | `reconcile.test.ts`, `sync-route.test.ts` |
-| 7 | `POST /v1/events` | `events-route.test.ts`, `v1-chain` |
+| 7 | `POST /v1/events` (incl. **`properties.surface`** contract for Cart Carrot / blocks) | `events-route.test.ts`, `v1-chain` |
 | 8 | OAuth stub + `oauth_sessions` | `oauth-route.test.ts`, `v1-chain` |
 | 9 | Webhook optional Basic Auth | `basic-auth-route.test.ts` |
 | 10 | Install/Uninstall lifecycle + `app_installs` | `lifecycle-route.test.ts`, `v1-chain` |
 | 11 | Internal Bearer + **`POST /v1/app-sync`** | `internal-auth-route.test.ts`, `app-sync-route.test.ts` |
 | 12 | **`GET /v1/account/user`** (extension JWT proxy) | `account-user-route.test.ts`, `v1-chain` |
-| *Next (prod hardening)* | Scheduled jobs, webhook signing, extension UI | — |
+| 13 | **`GET /v1/insights/overview`** + analytics **`properties.surface`** + **`/dashboard` UI** | `insights-route.test.ts`, `events/analytics-store.test.ts`, `v1-chain` |
+| *Next (prod hardening)* | Scheduled jobs, webhook signing, session→order attribution, extension UI | — |
 
 ## Local Postgres (optional)
 

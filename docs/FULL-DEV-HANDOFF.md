@@ -30,8 +30,8 @@ This file is the **single consolidated handoff** for engineers joining the proje
 
 | Path | Purpose |
 |------|---------|
-| **`apps/api`** | Hono — **`/health`**, **`/webhooks/commerce7`**, **`/lifecycle/*`**, **`GET /v1/account/user`**, **`/sync/orders`**, **`/reconcile/orders`**, **`/v1/app-sync`**, **`/v1/events`**, **`/oauth/callback`**. See **`docs/IMPLEMENTATION-LOG.md`**. |
-| **`apps/web`** | Next.js (App Router) + React 19 + Tailwind — **exact release** in `apps/web/package.json` / lockfile (as of repo date, Next **16.x** is current stable on npm). Dev **http://localhost:3000**. Stock starter page. |
+| **`apps/api`** | Hono — **`/health`**, **`/webhooks/commerce7`**, **`/lifecycle/*`**, **`GET /v1/account/user`**, **`GET /v1/insights/overview`** (aggregates from **`/v1/events`**), **`/sync/orders`**, **`/reconcile/orders`**, **`/v1/app-sync`**, **`/v1/events`** (Cart Carrot / personalization blocks: set **`properties.surface`** to `cart_carrot` or `personalization_block`), **`/oauth/callback`**. See **`docs/IMPLEMENTATION-LOG.md`**. |
+| **`apps/web`** | Next.js (App Router) + React 19 + Tailwind — **exact release** in `apps/web/package.json` / lockfile (as of repo date, Next **16.x** is current stable on npm). Dev **http://localhost:3000**. **Integration console** (`/`, `/app`) for operators; **analytics dashboard** (`/dashboard`) for Cart Carrot / personalization overview from the API. |
 | **`docs/developer/**`** | Mirrored Commerce7 guides (by topic). Regenerate: `python3 scripts/fetch_docs.py` |
 | **`docs/plans/**`** | Product/engineering plans (Insights, personalization arch, V1 stress tests) |
 | **`scripts/fetch_docs.py`** | Pulls public hub docs into `docs/developer/` |

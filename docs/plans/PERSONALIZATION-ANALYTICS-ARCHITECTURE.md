@@ -124,6 +124,18 @@ Because these are **product features**, not API primitives in the mirror:
 
 **Plan:** treat storefront instrumentation as **versioned SDK + schema**; negotiate **stable IDs** for each block/carrot instance with Commerce7 or the merchant.
 
+### 3.5 This monorepo: event sink + dashboard
+
+The codebase includes a **browser → API event sink** and a **standalone dashboard** so you can rehearse Cart Carrot / personalization analytics before Commerce7 **Report** extensions exist:
+
+| Piece | Behavior |
+|-------|----------|
+| **Ingest** | `POST /v1/events` — include **`properties.surface`**: `cart_carrot` or `personalization_block`; use **`name`** for funnel steps (`impression`, `click`, `add_to_cart`, `purchase`, …). Contract notes: `apps/api/src/events/analytics-contract.ts`. |
+| **Aggregates** | `GET /v1/insights/overview?tenantId=` — per-surface totals, Cart Carrot / personalization slices, store-wide counts for purchase-like **`name`** values. **Session → order attribution** (“did this carrot cause the sale?”) is **not** computed in this endpoint; it still requires webhook + correlation id work described in Layer A/B above. |
+| **UI** | Next.js **`/dashboard`** — reads the overview JSON; **`/`** / **`/app`** remain the operator Integration console. |
+
+API table and implementation rows: **`docs/IMPLEMENTATION-LOG.md`**.
+
 ---
 
 ## 4. Attribution model (example)

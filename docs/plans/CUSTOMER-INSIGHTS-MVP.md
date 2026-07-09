@@ -3,6 +3,8 @@
 **Shape:** Standalone dashboard (not embedded in Commerce7 Admin initially) backed by **read-heavy** use of Commerce7 REST APIs.  
 **Goal:** De-risk Commerce7 app patterns (ADC, install per tenant, Basic Auth + `tenant` header, pagination) while delivering spreadsheet-adjacent value (orders, customers, clubs, simple aggregates).
 
+**As implemented in this repo today:** a standalone **Next.js `/dashboard`** reads **`GET /v1/insights/overview`**, driven mostly by **`POST /v1/events`** payloads tagged with **`properties.surface`** (`cart_carrot`, `personalization_block`) for dynamic-merchandising funnels—see **`docs/plans/PERSONALIZATION-ANALYTICS-ARCHITECTURE.md`** §3.5. Broader **spreadsheet-style insights** (orders, customers, clubs) straight from Commerce7 REST remain the roadmap described below; delivered components and API paths are tracked in **`docs/IMPLEMENTATION-LOG.md`**.
+
 ---
 
 ## 1. Resolved from Commerce7 developer docs (in-repo mirror)

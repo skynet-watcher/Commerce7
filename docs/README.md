@@ -7,6 +7,11 @@ For a **build execution plan** (spec → ADC → implementation order), see **[E
 Pages below are an offline export for quick lookup. Prefer the live site
 for the latest content.
 
+Sandbox operations:
+
+- [Human setup playbook](SANDBOX-HUMAN-SETUP-PLAYBOOK.md)
+- [Current hardening log](SANDBOX-HARDENING-LOG.md)
+
 ## Contents by section
 
 ### Getting started (`getting-started/`)

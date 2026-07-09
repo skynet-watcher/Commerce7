@@ -8,7 +8,7 @@ integration using the [App Development Center](https://developer.commerce7.com/d
 **Before a new project lands:** **[`docs/KICKOFF-TOMORROW.md`](docs/KICKOFF-TOMORROW.md)** (access, env, first hour). Capture requirements with **[`docs/PROJECT-BRIEF-TEMPLATE.md`](docs/PROJECT-BRIEF-TEMPLATE.md)**. Copy **[`.env.example`](.env.example)** to `.env` (gitignored) when you have credentials.
 
 - **DB (local):** `docker compose up -d` — Postgres 16 on port **5432** (see `docker-compose.yml`).
-- **Run API + Integration UI together:** `pnpm dev:all` — or `pnpm dev:api` + `pnpm dev:web` in two terminals ([`docs/SANDBOX-TOMORROW.md`](docs/SANDBOX-TOMORROW.md)).
+- **Run API + Integration UI together:** `pnpm dev:all` — or `pnpm dev:api` + `pnpm dev:web` in two terminals ([`docs/SANDBOX-TOMORROW.md`](docs/SANDBOX-TOMORROW.md)). Analytics UI for Cart Carrot / personalization aggregates: **http://localhost:3000/dashboard** (see [`docs/IMPLEMENTATION-LOG.md`](docs/IMPLEMENTATION-LOG.md)).
 - **V1 automation:** `pnpm v1:pipeline` — typecheck, optional migrate, test, build ([`docs/V1-BUILD-SEQUENCE.md`](docs/V1-BUILD-SEQUENCE.md)).
 
 **Stacks & tooling:** **[`docs/STACK.md`](docs/STACK.md)** — Node 20+ (see `.nvmrc`), pnpm, Hono API, Next.js UI, ngrok. Run **`pnpm install`** then **`pnpm dev`** (API only) or **`pnpm dev:web`** / **`pnpm dev:all`**.

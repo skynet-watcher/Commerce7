@@ -12,17 +12,19 @@ Components are delivered **one at a time**: implement → **`pnpm test`** → **
 | 6 | **`synced_orders` + `OrderRefPersistence`** | Done | `sync/order-persistence.ts`, `run-order-sync` persist option |
 | 7 | **`POST /reconcile/orders`** (T9 precursor) | Done | `sync/reconcile.ts`, `reconcile.test.ts`, `sync-route.test.ts` |
 | 8 | **`POST /v1/events`** (idempotent analytics sink, 64KB limit) | Done | `events/*`, `events-route.test.ts` |
-| 9 | **OAuth callback stub + `oauth_sessions`** | Done | `oauth/*`, `oauth-route.test.ts` |
+| 9 | **OAuth callback + optional token exchange + `oauth_sessions`** | Done | `oauth/*`, `token-exchange.ts`, `oauth-route.test.ts` |
 | 10 | **Optional webhook Basic Auth** (ADC Advanced) | Done | `webhook/basic-auth.ts`, `basic-auth-route.test.ts` |
 | 11 | **End-to-end smoke** | Done | `v1-chain.test.ts` |
 | 12 | **Postgres V1 integration** | Done | `pg-v1.integration.test.ts` (needs `TEST_DATABASE_URL`) |
 | 13 | **`POST /lifecycle/install` / `uninstall`** (ADC Install/Uninstall URL) | Done | `lifecycle/*`, `lifecycle-route.test.ts`, `pg-v1` |
-| 14 | **Optional internal Bearer** on sync / reconcile / analytics / **app-sync** | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
+| 14 | **Optional internal Bearer** on sync / reconcile / **POST** analytics & app-sync / **`GET /v1/insights/overview`** | Done | `auth/internal-bearer.ts`, `internal-auth-route.test.ts` |
 | 15 | **`POST /v1/app-sync`** (push status to Commerce7 Admin on an object) | Done | `c7/app-sync-schema.ts`, `http-client.ts`, `app-sync-route.test.ts`, `v1-chain` |
 | 16 | **`GET /v1/account/user`** (proxy extension `account` / `appToken` JWT) | Done | `account-user-route.test.ts`, `http-client.test.ts`, `v1-chain` |
 | 17 | **Integration console UI** (`apps/web`, `/` + `/app`) | Done | Manual sandbox QA — [`SANDBOX-TOMORROW.md`](SANDBOX-TOMORROW.md) |
+| 18 | **Analytics by `properties.surface` + `GET /v1/insights/overview` + Cart Carrot / personalization dashboard** (`/dashboard`) | Done | `events/analytics-contract.ts`, `events/analytics-store.ts`, `insights/*`, `insights-route.test.ts`, `events/analytics-store.test.ts`, `apps/web/src/app/dashboard`, `v1-chain` |
+| 19 | **Background order sync runner + merchant controls** | Done | `sync/background-scheduler.ts`, `GET /v1/sync/status`, `POST /v1/sync/run`, explicit tenant env, active-install discovery, `sync-route.test.ts`, `integration-console.tsx` |
 
-**Still not production-complete (see `HANDOFF.md`):** scheduled reconciliation / broker, hardened extension UI (CSP, etc.). Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
+**Still not production-complete (see `HANDOFF.md`):** hosted durable scheduler / queue, encrypted token storage, hardened extension UI (CSP, etc.). Admin extension auth: gateway **`GET /v1/account/user`** proxies Commerce7 **`GET /account/user`** — pass the **same `Authorization` value** your iframe received (often the **raw JWT**, not `Bearer …`; see authenticate-app doc).
 
 **Still optional:** Commerce7-specific **webhook signing** beyond HTTP Basic (ADC “Advanced”).
 
@@ -34,14 +36,18 @@ See also: [`FULL-DEV-HANDOFF.md`](FULL-DEV-HANDOFF.md) Phase A/B sequence.
 |--------|------|---------|
 | GET | `/health` | Liveness |
 | GET | `/v1/account/user` | `?tenantId=` + **`Authorization`** — proxies Commerce7 **`GET /account/user`** (extension JWT; **not** gated by `INTERNAL_API_TOKEN`); requires `sync` / client wired |
-| GET | `/oauth/callback` | Stores query stub when `oauth` store wired and `tenantId` present |
+| GET | `/oauth/callback` | Stores callback query when `oauth` store wired and `tenantId` present; exchanges `code` if `OAUTH_TOKEN_URL` + client credentials are configured |
+| GET | `/oauth/status` | `?tenantId=` — token/session status without exposing token values (Bearer if `INTERNAL_API_TOKEN` set) |
 | POST | `/webhooks/commerce7` | Commerce7 webhook envelope |
 | POST | `/lifecycle/install` | Commerce7 **Install URL** — JSON or form body; `tenantId` + installer + client settings (passthrough `raw`) |
 | POST | `/lifecycle/uninstall` | Commerce7 **Uninstall URL** — `{ tenantId }` |
 | POST | `/sync/orders` | `{ tenantId }` — one Commerce7 cursor batch (`Authorization: Bearer` if `INTERNAL_API_TOKEN` set) |
+| GET | `/v1/sync/status` | `?tenantId=` optional — background sync runner state (Bearer if configured) |
+| POST | `/v1/sync/run` | `{ tenantId }` — merchant-facing immediate background sync run (Bearer if configured) |
 | POST | `/reconcile/orders` | `{ tenantId }` — `synced_orders` count vs fresh API walk (Bearer if configured) |
 | POST | `/v1/app-sync` | `tenantId` + ADC app-sync fields — forwards to Commerce7 **`POST /app-sync`** (Bearer if `INTERNAL_API_TOKEN` set); requires `sync` / client wired |
-| POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured) |
+| GET | **`/v1/insights/overview`** | **`?tenantId=`** — Cart Carrot / personalization aggregates from **`/v1/events`** (by `properties.surface`), order-walk context, conversion-like event counts; **session→order attribution not computed here**. Bearer if `INTERNAL_API_TOKEN` set; requires **`sync`** + **`analytics`** stores |
+| POST | `/v1/events` | `{ tenantId, clientEventId, name, properties? }` — idempotent analytics (Bearer if configured). Tag Cart Carrot / blocks with **`properties.surface`**: `cart_carrot` \| `personalization_block`; use **`name`** for funnel steps (`click`, `add_to_cart`, `purchase`, …). See `events/analytics-contract.ts`. |
 
 ### Extension JWT (`GET /v1/account/user`)
 
