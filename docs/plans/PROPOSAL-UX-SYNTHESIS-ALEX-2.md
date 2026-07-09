@@ -1,7 +1,7 @@
 # Proposal: Scan → Recommend → Confirm (synthesis)
 **Author:** Alex  
 **Date:** 2026-06-18  
-**Status:** PROPOSAL — do not implement without Eric's review  
+**Status:** SUPERSEDED — 2026-07-09. This proposal round was explored without knowledge of the sandbox-validated Cart Carrot Analytics build (see `docs/SANDBOX-HARDENING-LOG.md`, `/dashboard`). Kept for reference; the scan-before-recommend idea may inform future strategy features.  
 **Synthesises:** `e387956`, `b13bc9f` (Alex #1), `30fcbe8` (Chad)
 
 ---

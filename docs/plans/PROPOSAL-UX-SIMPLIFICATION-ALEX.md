@@ -1,7 +1,7 @@
 # Proposal: Three-Step Deployment Flow
 **Author:** Alex  
 **Date:** 2026-06-18  
-**Status:** PROPOSAL — do not implement without Eric's review  
+**Status:** SUPERSEDED — 2026-07-09. Product direction is the sandbox-validated Cart Carrot Analytics build (see `docs/SANDBOX-HARDENING-LOG.md`). Kept for reference.  
 **Competing with:** commit `e387956` ("proposal: simplify customer strategy workflow")
 
 ---
