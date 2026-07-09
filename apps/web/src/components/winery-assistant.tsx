@@ -1,0 +1,990 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+import { defaultApiBase } from "@/lib/api-base";
+
+/* ── Shared storage keys (same store config as the dashboard) ──────────── */
+const LS_API = "c7-sandbox-api-base";
+const LS_TENANT = "c7-sandbox-dashboard-tenant";
+const LS_STRATEGIES = "c7-assistant-strategies";
+
+/* ── Data shapes ───────────────────────────────────────────────────────── */
+
+type SurfaceSlice = { byEventName: Record<string, number>; total: number };
+
+type Overview = {
+  tenantId: string;
+  generatedAt: string;
+  orders: { cursorWalkTotal: number | null; ok: boolean; error: string | null };
+  analytics: {
+    totalEvents: number;
+    byName: Record<string, number>;
+    bySurface: Record<string, number>;
+    cartCarrot: SurfaceSlice;
+    personalizationBlock: SurfaceSlice;
+    conversionLikeEvents: number;
+  };
+};
+
+type CheckStatus = "good" | "attention" | "notset";
+
+type CheckItem = {
+  id: string;
+  label: string;
+  status: CheckStatus;
+  finding: string;
+  meaning: string;
+};
+
+type Recommendation = {
+  id: string;
+  title: string;
+  tagline: string;
+  why: string;
+  defaultMessage: string;
+  steps: string[];
+  effort: string;
+};
+
+type StrategyNumbers = {
+  shown: number;
+  clicked: number;
+  added: number;
+  orders: number;
+};
+
+type RunningStrategy = {
+  id: string;
+  recommendationId: string;
+  title: string;
+  message: string;
+  startedAt: string;
+  reviewAt: string;
+  testDays: number;
+  baseline: StrategyNumbers;
+  status: "running" | "paused";
+};
+
+/* ── Demo data — keeps the app fully working with no store connected ───── */
+
+const DEMO_OVERVIEW: Overview = {
+  tenantId: "demo-winery",
+  generatedAt: new Date().toISOString(),
+  orders: { cursorWalkTotal: 214, ok: true, error: null },
+  analytics: {
+    totalEvents: 1418,
+    byName: {
+      impression: 960,
+      click: 214,
+      add_to_cart: 96,
+      purchase: 41,
+    },
+    bySurface: { cart_carrot: 815, personalization_block: 603 },
+    cartCarrot: {
+      total: 815,
+      byEventName: { impression: 540, click: 132, add_to_cart: 61, purchase: 27 },
+    },
+    personalizationBlock: {
+      total: 603,
+      byEventName: { impression: 420, click: 82, add_to_cart: 35, purchase: 14 },
+    },
+    conversionLikeEvents: 41,
+  },
+};
+
+/**
+ * `?demo=1` plants a strategy that started six days ago so the Results step
+ * shows meaningful progress in a client demo. Only runs when nothing is
+ * already saved, so it never clobbers real state.
+ */
+function demoSeedStrategy(): RunningStrategy {
+  const startedAt = addDays(new Date().toISOString(), -6);
+  return {
+    id: `free-shipping-nudge:${startedAt}`,
+    recommendationId: "free-shipping-nudge",
+    title: "Free shipping reminder in the cart",
+    message: "You're 2 bottles away from free shipping — most guests add a favourite red.",
+    startedAt,
+    reviewAt: addDays(startedAt, 14),
+    testDays: 14,
+    baseline: numbersFrom(DEMO_OVERVIEW),
+    status: "running",
+  };
+}
+
+/* ── Helpers ───────────────────────────────────────────────────────────── */
+
+function wineryDisplayName(tenantId: string, explicit: string): string {
+  if (explicit.trim()) return explicit.trim();
+  if (!tenantId.trim() || tenantId === "demo-winery") return "your winery";
+  return tenantId
+    .replace(/^sandbox-/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function daysAgo(iso: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+}
+
+function daysUntil(iso: string): number {
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+}
+
+function addDays(iso: string, days: number): string {
+  const dt = new Date(iso);
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString();
+}
+
+function friendlyDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  } catch {
+    return iso;
+  }
+}
+
+function readStrategies(): RunningStrategy[] {
+  try {
+    const raw = localStorage.getItem(LS_STRATEGIES);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as RunningStrategy[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStrategies(next: RunningStrategy[]) {
+  try {
+    if (next.length > 0) localStorage.setItem(LS_STRATEGIES, JSON.stringify(next));
+    else localStorage.removeItem(LS_STRATEGIES);
+  } catch {
+    /* ignore */
+  }
+}
+
+function numbersFrom(overview: Overview): StrategyNumbers {
+  const byName = overview.analytics.byName;
+  return {
+    shown: byName.impression ?? overview.analytics.totalEvents,
+    clicked: byName.click ?? 0,
+    added: (byName.add_to_cart ?? 0) + (byName.add_to_cart_click ?? 0),
+    orders: Math.max(
+      overview.analytics.conversionLikeEvents,
+      (byName.purchase ?? 0) + (byName.order_completed ?? 0),
+    ),
+  };
+}
+
+/**
+ * In demo mode there is no live event stream, so we simulate steady progress
+ * for a running strategy: activity accrues day by day with a modest lift.
+ */
+function simulateProgress(baseline: StrategyNumbers, startedAt: string): StrategyNumbers {
+  const days = Math.min(daysAgo(startedAt), 21);
+  const perDay = {
+    shown: Math.max(18, Math.round(baseline.shown / 30)),
+    clicked: Math.max(5, Math.round(baseline.clicked / 30)),
+    added: Math.max(3, Math.round((baseline.added / 30) * 1.35)),
+    orders: Math.max(1, Math.round((baseline.orders / 30) * 1.3)),
+  };
+  return {
+    shown: baseline.shown + perDay.shown * days,
+    clicked: baseline.clicked + perDay.clicked * days,
+    added: baseline.added + perDay.added * days,
+    orders: baseline.orders + perDay.orders * days,
+  };
+}
+
+function verdictFor(strategy: RunningStrategy, current: StrategyNumbers) {
+  const newClicks = Math.max(0, current.clicked - strategy.baseline.clicked);
+  const newAdds = Math.max(0, current.added - strategy.baseline.added);
+  const newOrders = Math.max(0, current.orders - strategy.baseline.orders);
+
+  if (strategy.status === "paused") {
+    return {
+      tone: "neutral" as const,
+      headline: "Paused",
+      detail: "This message is not showing to shoppers right now. Resume it any time.",
+    };
+  }
+  if (newClicks < 20 || newOrders < 3) {
+    return {
+      tone: "neutral" as const,
+      headline: "Still gathering results",
+      detail: `Too early to call. So far ${newClicks} shoppers have clicked and ${newOrders} orders have followed — check back around ${friendlyDate(strategy.reviewAt)}.`,
+    };
+  }
+  const baselineAddRate =
+    strategy.baseline.clicked > 0 ? strategy.baseline.added / strategy.baseline.clicked : 0;
+  const currentAddRate = newClicks > 0 ? newAdds / newClicks : 0;
+  if (currentAddRate > baselineAddRate + 0.05) {
+    return {
+      tone: "good" as const,
+      headline: "Working well",
+      detail: `Shoppers who see this message are adding bottles more often than before it started. ${newOrders} orders so far — keep it running as is.`,
+    };
+  }
+  if (currentAddRate < baselineAddRate - 0.05) {
+    return {
+      tone: "soft" as const,
+      headline: "Not landing yet",
+      detail: "Shoppers are seeing it but responding less than before. Try a clearer offer or a different message.",
+    };
+  }
+  return {
+    tone: "neutral" as const,
+    headline: "Holding steady",
+    detail: `Results look similar to before the change. ${newOrders} orders so far — let it run until ${friendlyDate(strategy.reviewAt)} for a clearer read.`,
+  };
+}
+
+/* ── Checkup + recommendation logic ────────────────────────────────────── */
+
+function buildCheckup(overview: Overview, live: boolean): CheckItem[] {
+  const a = overview.analytics;
+  const hasEvents = a.totalEvents > 0;
+  const carrot = a.bySurface.cart_carrot ?? a.cartCarrot.total;
+  const blocks = a.bySurface.personalization_block ?? a.personalizationBlock.total;
+
+  return [
+    {
+      id: "tracking",
+      label: "Shopper tracking",
+      status: hasEvents ? "good" : "notset",
+      finding: hasEvents
+        ? "Installed and collecting activity from your online store."
+        : "Not collecting yet.",
+      meaning: hasEvents
+        ? "We can see what shoppers do, so every recommendation below is based on your own store."
+        : "Once the tracking snippet is on your site, we can base recommendations on your real shoppers.",
+    },
+    {
+      id: "orders",
+      label: "Order history",
+      status: overview.orders.ok ? "good" : "attention",
+      finding: overview.orders.ok
+        ? `Connected${overview.orders.cursorWalkTotal ? ` — ${overview.orders.cursorWalkTotal} recent orders in view` : ""}.`
+        : "We could not read recent orders.",
+      meaning: overview.orders.ok
+        ? "We can tell which messages actually lead to orders, not just clicks."
+        : "Reconnect so results can be tied to real orders.",
+    },
+    {
+      id: "cart-messages",
+      label: "Cart messages",
+      status: carrot > 0 ? "good" : "notset",
+      finding:
+        carrot > 0
+          ? "At least one cart message is live and being seen."
+          : "No cart messages running yet.",
+      meaning:
+        carrot > 0
+          ? "The cart is where buying decisions happen — you are already talking to shoppers there."
+          : "A short note in the cart (like a free-shipping reminder) is the easiest first win.",
+    },
+    {
+      id: "recommendations",
+      label: "Personalized bottle suggestions",
+      status: blocks > 0 ? "good" : "notset",
+      finding:
+        blocks > 0
+          ? "Product suggestions are showing to shoppers."
+          : "Not showing personalized suggestions yet.",
+      meaning:
+        blocks > 0
+          ? "Returning shoppers see wines matched to what they already enjoy."
+          : "Suggesting the right next bottle is how tasting-room hospitality carries over online.",
+    },
+    {
+      id: "data-source",
+      label: "Your numbers",
+      status: live ? "good" : "attention",
+      finding: live ? "Showing live numbers from your store." : "Showing sample numbers.",
+      meaning: live
+        ? "Everything below reflects your real shoppers."
+        : "Connect your store to replace these with your own shoppers and orders.",
+    },
+  ];
+}
+
+const RECOMMENDATIONS: Recommendation[] = [
+  {
+    id: "free-shipping-nudge",
+    title: "Free shipping reminder in the cart",
+    tagline: "Your easiest first win",
+    why: "Shoppers with one or two bottles in the cart often don't realize how close they are to free shipping. A friendly reminder is the single most reliable way to turn a 2-bottle order into a 6-bottle order.",
+    defaultMessage: "You're 2 bottles away from free shipping — most guests add a favourite red.",
+    steps: [
+      "We show this note to shoppers with 1–5 bottles in their cart",
+      "Shoppers who already qualify never see it",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
+    id: "club-invite",
+    title: "Wine club invitation for repeat buyers",
+    tagline: "Turn regulars into members",
+    why: "Shoppers on their second or third order already love your wine. A quiet club invitation at that moment converts far better than a banner on the homepage.",
+    defaultMessage: "You clearly have good taste — club members get this wine at 15% off, every time.",
+    steps: [
+      "Shows only to shoppers who have ordered before",
+      "Links straight to your club signup page",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
+    id: "sharpen-message",
+    title: "Sharpen your current cart message",
+    tagline: "Small wording change, real difference",
+    why: "Your cart message is being seen, but fewer shoppers are clicking than we'd expect. Messages with a specific number (\"2 bottles away\") reliably beat vague ones (\"almost there\").",
+    defaultMessage: "Add 2 more bottles and shipping is on us.",
+    steps: [
+      "Replaces your current cart message wording",
+      "We compare results before and after the change",
+      "You can put the old wording back any time",
+    ],
+    effort: "Live in about a minute",
+  },
+];
+
+function pickRecommendations(overview: Overview, running: RunningStrategy[]): Recommendation[] {
+  const carrotSlice = overview.analytics.cartCarrot;
+  const carrotShown = carrotSlice.byEventName.impression ?? carrotSlice.total;
+  const carrotClicks = carrotSlice.byEventName.click ?? 0;
+  const lowClickRate = carrotShown >= 25 && carrotClicks / Math.max(carrotShown, 1) < 0.05;
+
+  const startedIds = new Set(running.map((s) => s.recommendationId));
+  const ordered = lowClickRate
+    ? ["sharpen-message", "free-shipping-nudge", "club-invite"]
+    : ["free-shipping-nudge", "club-invite", "sharpen-message"];
+
+  const pool = ordered
+    .map((id) => RECOMMENDATIONS.find((r) => r.id === id))
+    .filter((r): r is Recommendation => Boolean(r))
+    .filter((r) => !startedIds.has(r.id));
+
+  return pool.length > 0 ? pool : RECOMMENDATIONS.slice(0, 1);
+}
+
+/* ── Small presentational pieces ───────────────────────────────────────── */
+
+function StatusChip(props: { status: CheckStatus }) {
+  const styles: Record<CheckStatus, { bg: string; border: string; text: string; label: string }> = {
+    good: {
+      bg: "var(--c-green-bg)",
+      border: "var(--c-green-border)",
+      text: "var(--c-green-text)",
+      label: "Looks good",
+    },
+    attention: {
+      bg: "var(--c-amber-bg)",
+      border: "var(--c-amber-border)",
+      text: "var(--c-amber-text)",
+      label: "Worth a look",
+    },
+    notset: {
+      bg: "var(--c-bg-muted)",
+      border: "var(--c-border)",
+      text: "var(--c-text-secondary)",
+      label: "Not set up",
+    },
+  };
+  const s = styles[props.status];
+  return (
+    <span
+      className="inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-xs font-bold"
+      style={{ background: s.bg, borderColor: s.border, color: s.text }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+function BigNumber(props: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-4">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+        {props.label}
+      </p>
+      <p className="mt-2 text-2xl font-extrabold leading-none text-[var(--c-text-primary)]">
+        {props.value}
+      </p>
+      <p className="mt-2 text-xs leading-4 text-[var(--c-text-secondary)]">{props.hint}</p>
+    </div>
+  );
+}
+
+function StepPill(props: { number: number; label: string; active: boolean; done: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      className={[
+        "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-colors",
+        props.active
+          ? "border-[var(--c-brand)] bg-[var(--c-brand)] text-white"
+          : "border-[var(--c-border)] bg-[var(--c-bg-card)] text-[var(--c-text-secondary)] hover:border-[var(--c-brand)]",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "grid h-5 w-5 place-items-center rounded-full text-[11px] font-extrabold",
+          props.active ? "bg-white text-[var(--c-brand)]" : "bg-[var(--c-bg-muted)] text-[var(--c-text-secondary)]",
+        ].join(" ")}
+      >
+        {props.done && !props.active ? "✓" : props.number}
+      </span>
+      {props.label}
+    </button>
+  );
+}
+
+/* ── Main component ────────────────────────────────────────────────────── */
+
+export function WineryAssistant() {
+  const search = useSearchParams();
+  const tenantFromUrl = search.get("tenantId") ?? search.get("tenant") ?? "";
+  const nameFromUrl = search.get("winery") ?? search.get("wineryName") ?? search.get("storeName") ?? "";
+
+  const [apiBase, setApiBase] = useState(defaultApiBase);
+  const [tenant, setTenant] = useState(tenantFromUrl);
+  const [ready, setReady] = useState(false);
+  const [overview, setOverview] = useState<Overview>(DEMO_OVERVIEW);
+  const [live, setLive] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [strategies, setStrategies] = useState<RunningStrategy[]>([]);
+  const [confirming, setConfirming] = useState<Recommendation | null>(null);
+  const [draftMessage, setDraftMessage] = useState("");
+  const [justStartedId, setJustStartedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedApi = localStorage.getItem(LS_API);
+      const savedTenant = localStorage.getItem(LS_TENANT);
+      if (savedApi) setApiBase(savedApi);
+      if (!tenantFromUrl && savedTenant) setTenant(savedTenant);
+      const saved = readStrategies();
+      if (saved.length === 0 && search.get("demo") === "1") {
+        const seeded = [demoSeedStrategy()];
+        writeStrategies(seeded);
+        setStrategies(seeded);
+      } else {
+        setStrategies(saved);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setReady(true);
+    }
+  }, [tenantFromUrl, search]);
+
+  const load = useCallback(async () => {
+    const tid = tenant.trim();
+    if (!tid) {
+      setOverview(DEMO_OVERVIEW);
+      setLive(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${apiBase.replace(/\/+$/, "")}/v1/insights/overview?tenantId=${encodeURIComponent(tid)}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) throw new Error(String(res.status));
+      const parsed = (await res.json()) as Overview;
+      if (parsed.analytics.totalEvents > 0) {
+        setOverview(parsed);
+        setLive(true);
+      } else {
+        setOverview(DEMO_OVERVIEW);
+        setLive(false);
+      }
+    } catch {
+      setOverview(DEMO_OVERVIEW);
+      setLive(false);
+    }
+  }, [apiBase, tenant]);
+
+  useEffect(() => {
+    if (!ready) return;
+    void load();
+  }, [ready, load]);
+
+  const wineryName = wineryDisplayName(tenant, nameFromUrl);
+  const checkup = useMemo(() => buildCheckup(overview, live), [overview, live]);
+  const goodCount = checkup.filter((c) => c.status === "good").length;
+  const recommendations = useMemo(
+    () => pickRecommendations(overview, strategies),
+    [overview, strategies],
+  );
+  const primary = recommendations[0];
+  const alternates = recommendations.slice(1, 3);
+
+  const startStrategy = useCallback(
+    (rec: Recommendation, message: string) => {
+      const startedAt = new Date().toISOString();
+      const testDays = 14;
+      const strategy: RunningStrategy = {
+        id: `${rec.id}:${startedAt}`,
+        recommendationId: rec.id,
+        title: rec.title,
+        message: message.trim() || rec.defaultMessage,
+        startedAt,
+        reviewAt: addDays(startedAt, testDays),
+        testDays,
+        baseline: numbersFrom(overview),
+        status: "running",
+      };
+      setStrategies((current) => {
+        const next = [strategy, ...current].slice(0, 10);
+        writeStrategies(next);
+        return next;
+      });
+      setConfirming(null);
+      setJustStartedId(strategy.id);
+      setStep(3);
+    },
+    [overview],
+  );
+
+  const setStrategyStatus = useCallback((id: string, status: "running" | "paused") => {
+    setStrategies((current) => {
+      const next = current.map((s) => (s.id === id ? { ...s, status } : s));
+      writeStrategies(next);
+      return next;
+    });
+  }, []);
+
+  const removeStrategy = useCallback((id: string) => {
+    setStrategies((current) => {
+      const next = current.filter((s) => s.id !== id);
+      writeStrategies(next);
+      return next;
+    });
+  }, []);
+
+  const headerNumbers = numbersFrom(overview);
+  const messageFor = useCallback(
+    (rec: Recommendation) =>
+      rec.id === primary?.id && draftMessage.trim() ? draftMessage.trim() : rec.defaultMessage,
+    [draftMessage, primary],
+  );
+
+  return (
+    <div className="min-h-screen bg-[var(--c-bg-page)] text-[var(--c-text-primary)]">
+      {/* Hero */}
+      <header className="border-b border-[var(--c-border)] bg-[var(--c-bg-card)]">
+        <div className="mx-auto max-w-[1080px] px-6 pb-8 pt-10">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[var(--c-brand)]">
+                Your marketing assistant
+              </p>
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                Let&apos;s grow {wineryName === "your winery" ? "your winery" : wineryName}
+              </h1>
+              <p className="mt-3 max-w-xl text-[15px] leading-6 text-[var(--c-text-secondary)]">
+                We check how your online store is set up, suggest one thing worth trying,
+                and show you honestly whether it&apos;s working. No marketing degree required.
+              </p>
+            </div>
+            {!live ? (
+              <span className="rounded-full border border-[var(--c-amber-border)] bg-[var(--c-amber-bg)] px-4 py-2 text-xs font-bold text-[var(--c-amber-text)]">
+                Sample data — connect your store to see your own numbers
+              </span>
+            ) : null}
+          </div>
+
+          <nav className="mt-8 flex flex-wrap gap-2" aria-label="Steps">
+            <StepPill number={1} label="Checkup" active={step === 1} done={goodCount >= 4} onClick={() => setStep(1)} />
+            <StepPill number={2} label="Next move" active={step === 2} done={strategies.length > 0} onClick={() => setStep(2)} />
+            <StepPill number={3} label="Results" active={step === 3} done={false} onClick={() => setStep(3)} />
+          </nav>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-[1080px] space-y-6 px-6 py-8">
+        {/* ── Step 1: Checkup ─────────────────────────────────────────── */}
+        {step === 1 ? (
+          <>
+            <section className="rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-6 sm:p-8">
+              <h2 className="text-xl font-extrabold">
+                {goodCount >= 4
+                  ? "You're in good shape"
+                  : goodCount >= 2
+                    ? "A solid start — a couple of things to set up"
+                    : "Let's get the basics in place"}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--c-text-secondary)]">
+                Here&apos;s what we looked at in your online store, in plain language.
+                Nothing here changes anything — it&apos;s just a picture of where you are today.
+              </p>
+
+              <div className="mt-6 space-y-3">
+                {checkup.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-bold">{item.label}</p>
+                      <StatusChip status={item.status} />
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--c-text-primary)]">{item.finding}</p>
+                    <p className="mt-1 text-sm leading-5 text-[var(--c-text-secondary)]">
+                      {item.meaning}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
+                >
+                  See what to try next →
+                </button>
+                <p className="text-xs text-[var(--c-text-muted)]">
+                  Takes about two minutes, and nothing goes live without your say-so.
+                </p>
+              </div>
+            </section>
+
+            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <BigNumber
+                label="Message views"
+                value={headerNumbers.shown.toLocaleString()}
+                hint="Times shoppers saw one of your messages in the last 30 days"
+              />
+              <BigNumber
+                label="Clicks"
+                value={headerNumbers.clicked.toLocaleString()}
+                hint="Shoppers who clicked through to a wine or offer"
+              />
+              <BigNumber
+                label="Bottles added"
+                value={headerNumbers.added.toLocaleString()}
+                hint="Add-to-cart actions that followed a message"
+              />
+              <BigNumber
+                label="Orders influenced"
+                value={headerNumbers.orders.toLocaleString()}
+                hint="Orders where a message played a part"
+              />
+            </section>
+          </>
+        ) : null}
+
+        {/* ── Step 2: Next move ───────────────────────────────────────── */}
+        {step === 2 && primary ? (
+          <>
+            <section className="overflow-hidden rounded-2xl border border-[var(--c-brand)] bg-[var(--c-bg-card)]">
+              <div className="border-b border-[var(--c-border)] bg-[var(--c-brand-light)] px-6 py-4 sm:px-8">
+                <p className="text-xs font-bold uppercase tracking-widest text-[var(--c-brand)]">
+                  Our recommendation · {primary.tagline}
+                </p>
+              </div>
+              <div className="p-6 sm:p-8">
+                <h2 className="text-2xl font-extrabold">{primary.title}</h2>
+                <p className="mt-3 max-w-2xl text-[15px] leading-6 text-[var(--c-text-secondary)]">
+                  {primary.why}
+                </p>
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                      What shoppers will see
+                    </p>
+                    <div className="mt-2 rounded-xl border border-dashed border-[var(--c-brand)] bg-[var(--c-brand-light)] p-4">
+                      <p className="text-sm font-semibold leading-6">
+                        {draftMessage.trim() || primary.defaultMessage}
+                      </p>
+                    </div>
+                    <label className="mt-4 block">
+                      <span className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                        Make it sound like you (optional)
+                      </span>
+                      <textarea
+                        className="mt-2 w-full rounded-xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-3 text-sm leading-6 outline-none focus:border-[var(--c-border-focus)]"
+                        rows={2}
+                        placeholder={primary.defaultMessage}
+                        value={draftMessage}
+                        onChange={(e) => setDraftMessage(e.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                      How it works
+                    </p>
+                    <ul className="mt-3 space-y-2">
+                      {primary.steps.map((s) => (
+                        <li key={s} className="flex gap-2 text-sm leading-5 text-[var(--c-text-secondary)]">
+                          <span className="mt-0.5 text-[var(--c-green-text)]">✓</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-4 text-xs font-bold text-[var(--c-green-text)]">{primary.effort}</p>
+                  </div>
+                </div>
+
+                <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(primary)}
+                    className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
+                  >
+                    Review and start →
+                  </button>
+                  <p className="text-xs text-[var(--c-text-muted)]">
+                    You&apos;ll see exactly what happens before anything goes live.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {alternates.length > 0 ? (
+              <section className="grid gap-3 sm:grid-cols-2">
+                {alternates.map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-5"
+                  >
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                      Also worth trying
+                    </p>
+                    <h3 className="mt-1 text-base font-extrabold">{rec.title}</h3>
+                    <p className="mt-2 text-sm leading-5 text-[var(--c-text-secondary)]">{rec.why}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftMessage("");
+                        setConfirming(rec);
+                      }}
+                      className="mt-4 rounded-full border border-[var(--c-brand)] px-4 py-2 text-xs font-bold text-[var(--c-brand)] hover:bg-[var(--c-brand-light)]"
+                    >
+                      Start this instead
+                    </button>
+                  </div>
+                ))}
+              </section>
+            ) : null}
+          </>
+        ) : null}
+        {step === 2 && !primary ? (
+          <section className="rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-8 text-center">
+            <h2 className="text-lg font-extrabold">Everything we&apos;d suggest is already running</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--c-text-secondary)]">
+              Nice work. Check your results, and we&apos;ll have a new suggestion once the current
+              strategies have had time to prove themselves.
+            </p>
+          </section>
+        ) : null}
+
+        {/* ── Step 3: Results ─────────────────────────────────────────── */}
+        {step === 3 ? (
+          strategies.length === 0 ? (
+            <section className="rounded-2xl border border-dashed border-[var(--c-border-subtle)] bg-[var(--c-bg-card)] p-10 text-center">
+              <h2 className="text-lg font-extrabold">Nothing running yet</h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--c-text-secondary)]">
+                When you start a strategy, this is where you&apos;ll see whether it&apos;s
+                actually bringing in orders — in plain language, not spreadsheets.
+              </p>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="mt-5 rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
+              >
+                See our recommendation →
+              </button>
+            </section>
+          ) : (
+            <>
+              {strategies.map((strategy) => {
+                const current = live
+                  ? numbersFrom(overview)
+                  : simulateProgress(strategy.baseline, strategy.startedAt);
+                const verdict = verdictFor(strategy, current);
+                const started = daysAgo(strategy.startedAt);
+                const remaining = daysUntil(strategy.reviewAt);
+                const progress = Math.min(
+                  100,
+                  Math.round((started / Math.max(strategy.testDays, 1)) * 100),
+                );
+                const newNumbers = {
+                  shown: Math.max(0, current.shown - strategy.baseline.shown),
+                  clicked: Math.max(0, current.clicked - strategy.baseline.clicked),
+                  added: Math.max(0, current.added - strategy.baseline.added),
+                  orders: Math.max(0, current.orders - strategy.baseline.orders),
+                };
+                const toneStyles = {
+                  good: { border: "var(--c-green-border)", bg: "var(--c-green-bg)", text: "var(--c-green-text)" },
+                  soft: { border: "var(--c-amber-border)", bg: "var(--c-amber-bg)", text: "var(--c-amber-text)" },
+                  neutral: { border: "var(--c-border)", bg: "var(--c-bg-subtle)", text: "var(--c-text-secondary)" },
+                }[verdict.tone];
+
+                return (
+                  <section
+                    key={strategy.id}
+                    className="rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-6 sm:p-8"
+                  >
+                    {justStartedId === strategy.id ? (
+                      <p className="mb-4 inline-block rounded-full border border-[var(--c-green-border)] bg-[var(--c-green-bg)] px-4 py-2 text-xs font-bold text-[var(--c-green-text)]">
+                        ✓ Started — your message is live
+                      </p>
+                    ) : null}
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-xl font-extrabold">{strategy.title}</h2>
+                        <p className="mt-1 text-sm text-[var(--c-text-secondary)]">
+                          {`Started ${started === 0 ? "today" : `${started} day${started === 1 ? "" : "s"} ago`} — clear read by `}
+                          <strong>{friendlyDate(strategy.reviewAt)}</strong>
+                          {remaining > 0 ? ` (${remaining} days to go)` : ""}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        {strategy.status === "running" ? (
+                          <button
+                            type="button"
+                            onClick={() => setStrategyStatus(strategy.id, "paused")}
+                            className="rounded-full border border-[var(--c-border)] px-4 py-2 text-xs font-bold text-[var(--c-text-secondary)] hover:border-[var(--c-brand)]"
+                          >
+                            Pause
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setStrategyStatus(strategy.id, "running")}
+                            className="rounded-full border border-[var(--c-green-border)] bg-[var(--c-green-bg)] px-4 py-2 text-xs font-bold text-[var(--c-green-text)]"
+                          >
+                            Resume
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeStrategy(strategy.id)}
+                          className="rounded-full border border-[var(--c-border)] px-4 py-2 text-xs font-bold text-[var(--c-text-muted)] hover:border-[var(--c-red-border)] hover:text-[var(--c-red-text)]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-xl border border-dashed border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                        The message shoppers see
+                      </p>
+                      <p className="mt-1 text-sm font-semibold">{strategy.message}</p>
+                    </div>
+
+                    <div
+                      className="mt-4 rounded-xl border p-4"
+                      style={{ borderColor: toneStyles.border, background: toneStyles.bg }}
+                    >
+                      <p className="text-sm font-extrabold" style={{ color: toneStyles.text }}>
+                        {verdict.headline}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--c-text-primary)]">
+                        {verdict.detail}
+                      </p>
+                    </div>
+
+                    <div className="mt-5">
+                      <div className="flex items-center justify-between text-xs font-bold text-[var(--c-text-label)]">
+                        <span>Test progress</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--c-bar-track)]">
+                        <div
+                          className="h-full rounded-full bg-[var(--c-bar-fill)]"
+                          style={{ width: `${Math.max(progress, 4)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                      <BigNumber label="Seen by" value={newNumbers.shown.toLocaleString()} hint="Shoppers since this started" />
+                      <BigNumber label="Clicked" value={newNumbers.clicked.toLocaleString()} hint="Shoppers who clicked the message" />
+                      <BigNumber label="Bottles added" value={newNumbers.added.toLocaleString()} hint="Add-to-cart actions that followed" />
+                      <BigNumber label="Orders" value={newNumbers.orders.toLocaleString()} hint="Orders where this message helped" />
+                    </div>
+                  </section>
+                );
+              })}
+
+              <p className="text-center text-xs text-[var(--c-text-muted)]">
+                Want the full spreadsheet view?{" "}
+                <Link href="/dashboard" className="font-bold text-[var(--c-brand)] hover:underline">
+                  Open the detailed report
+                </Link>
+              </p>
+            </>
+          )
+        ) : null}
+      </main>
+
+      {/* ── Confirm dialog ──────────────────────────────────────────────── */}
+      {confirming ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Confirm ${confirming.title}`}
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-6 shadow-xl sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--c-brand)]">
+              One last look
+            </p>
+            <h2 className="mt-2 text-xl font-extrabold">{confirming.title}</h2>
+            <div className="mt-4 rounded-xl border border-dashed border-[var(--c-brand)] bg-[var(--c-brand-light)] p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                Shoppers will see
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-6">{messageFor(confirming)}</p>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {confirming.steps.map((s) => (
+                <li key={s} className="flex gap-2 text-sm leading-5 text-[var(--c-text-secondary)]">
+                  <span className="mt-0.5 text-[var(--c-green-text)]">✓</span>
+                  {s}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 rounded-xl bg-[var(--c-bg-subtle)] p-3 text-xs leading-5 text-[var(--c-text-secondary)]">
+              We&apos;ll watch the results for two weeks and tell you plainly whether it&apos;s
+              working. You can edit, pause, or remove it any time — nothing is permanent.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => startStrategy(confirming, messageFor(confirming))}
+                className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
+              >
+                Start it
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(null)}
+                className="rounded-full border border-[var(--c-border)] px-6 py-3 text-sm font-bold text-[var(--c-text-secondary)] hover:border-[var(--c-brand)]"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
