@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { defaultApiBase } from "@/lib/api-base";
@@ -9,6 +10,17 @@ const LS_API = "c7-sandbox-api-base";
 const LS_TOKEN = "c7-sandbox-operator-token";
 
 type ActionState = { ok: boolean; status: number; body: string; ms: number } | null;
+type SyncStatus = {
+  tenantId: string;
+  running: boolean;
+  lastStartedAt: string | null;
+  lastFinishedAt: string | null;
+  lastOk: boolean | null;
+  lastError: string | null;
+  lastFetched: number | null;
+  lastCompletedWalk: boolean | null;
+  runs: number;
+};
 
 function prettyJson(text: string): string {
   try {
@@ -33,6 +45,7 @@ export function IntegrationConsole() {
   const [manualTenant, setManualTenant] = useState("");
   const [manualJwt, setManualJwt] = useState("");
   const [last, setLast] = useState<ActionState>(null);
+  const [syncStatuses, setSyncStatuses] = useState<SyncStatus[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -108,6 +121,26 @@ export function IntegrationConsole() {
     [],
   );
 
+  const refreshSyncStatus = useCallback(async (): Promise<void> => {
+    if (!manualTenant.trim() && !fromUrl.tenantId) return;
+    const tenantId = manualTenant.trim() || fromUrl.tenantId;
+    const res = await fetch(
+      `${apiBase}/v1/sync/status?tenantId=${encodeURIComponent(tenantId)}`,
+      { headers: authHeaders() },
+    );
+    const text = await res.text();
+    if (res.ok) {
+      const parsed = JSON.parse(text) as { statuses?: SyncStatus[] };
+      setSyncStatuses(parsed.statuses ?? []);
+    }
+    setLast({
+      ok: res.ok,
+      status: res.status,
+      body: text || "(empty body)",
+      ms: 0,
+    });
+  }, [apiBase, authHeaders, fromUrl.tenantId, manualTenant]);
+
   const tenant = manualTenant.trim() || fromUrl.tenantId;
   const extensionJwt = manualJwt.trim() || fromUrl.account || fromUrl.appToken;
 
@@ -119,9 +152,15 @@ export function IntegrationConsole() {
             <p className="text-xs font-medium uppercase tracking-widest text-[var(--console-muted)]">
               Commerce7
             </p>
-            <h1 className="text-xl font-semibold tracking-tight">Integration console</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Merchant operations console</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="rounded-lg border border-[var(--console-border)] px-3 py-2 text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-800"
+            >
+              Insights dashboard
+            </Link>
             <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
               Sandbox-ready
             </span>
@@ -336,6 +375,104 @@ export function IntegrationConsole() {
               Sample webhook
             </button>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-[var(--console-border)] bg-[var(--console-surface)] p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--console-muted)]">
+            OAuth & background sync
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-[var(--console-muted)]">
+            Use this panel to verify the install callback/token exchange state, run an immediate
+            order sync, and inspect the background sync runner. Tokens stay server-side.
+          </p>
+          <div className="mt-4 rounded-lg border border-[var(--console-border)] bg-[var(--console-bg)] p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--console-muted)]">
+              OAuth callback URL for ADC
+            </p>
+            <code className="mt-1 block break-all text-xs">
+              {apiBase}/oauth/callback
+            </code>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy || !tenant}
+              className="rounded-lg border border-[var(--console-border)] bg-transparent px-4 py-2.5 text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() =>
+                run("oauth-status", () =>
+                  fetch(`${apiBase}/oauth/status?tenantId=${encodeURIComponent(tenant)}`, {
+                    headers: authHeaders(),
+                  }),
+                )
+              }
+            >
+              Check OAuth status
+            </button>
+            <button
+              type="button"
+              disabled={busy || !tenant}
+              className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() =>
+                run("background-sync-run", () =>
+                  fetch(`${apiBase}/v1/sync/run`, {
+                    method: "POST",
+                    headers: { ...authHeaders(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ tenantId: tenant }),
+                  }),
+                ).then(refreshSyncStatus)
+              }
+            >
+              Run background sync now
+            </button>
+            <button
+              type="button"
+              disabled={busy || !tenant}
+              className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-950 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100 dark:hover:bg-blue-950/60 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={refreshSyncStatus}
+            >
+              Refresh sync status
+            </button>
+          </div>
+          {syncStatuses.length > 0 ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {syncStatuses.map((status) => (
+                <div
+                  key={status.tenantId}
+                  className="rounded-lg border border-[var(--console-border)] bg-[var(--console-bg)] p-4"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-sm">{status.tenantId}</p>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        status.running
+                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-200"
+                          : status.lastOk === false
+                            ? "bg-red-500/15 text-red-700 dark:text-red-200"
+                            : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
+                      }`}
+                    >
+                      {status.running ? "Running" : status.lastOk === false ? "Needs attention" : "Ready"}
+                    </span>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-[var(--console-muted)]">
+                    <dt>Runs</dt>
+                    <dd className="text-right">{status.runs}</dd>
+                    <dt>Last fetched</dt>
+                    <dd className="text-right">{status.lastFetched ?? "—"}</dd>
+                    <dt>Full walk</dt>
+                    <dd className="text-right">{status.lastCompletedWalk == null ? "—" : String(status.lastCompletedWalk)}</dd>
+                    <dt>Finished</dt>
+                    <dd className="text-right">{status.lastFinishedAt ? new Date(status.lastFinishedAt).toLocaleString() : "—"}</dd>
+                  </dl>
+                  {status.lastError ? (
+                    <p className="mt-3 rounded bg-red-500/10 p-2 text-xs text-red-700 dark:text-red-200">
+                      {status.lastError}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-2xl border border-dashed border-[var(--console-border)] bg-[var(--console-surface)]/50 p-6">

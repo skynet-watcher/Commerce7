@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Commerce7 · Integration console",
-  description: "Test Commerce7 webhook, sync, and extension flows against the sandbox API.",
+  title: "Cart Carrot Analytics Docs",
+  description:
+    "Setup guides and reference for Cart Carrot Analytics — impression, click, and purchase tracking for Commerce7 wineries.",
 };
 
 export default function RootLayout({

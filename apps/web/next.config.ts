@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
+const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(/\/+$/, "");
+const devOrigins = [
+  "bbs-drug-totally-requires.trycloudflare.com",
+  "polo-name-relationship-marco.trycloudflare.com",
+];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["bbs-drug-totally-requires.trycloudflare.com"],
+  allowedDevOrigins: devOrigins,
 
   async headers() {
     return [
@@ -21,8 +26,8 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self'",
-              // Allow API calls to local dev server and Commerce7
-              "connect-src 'self' http://localhost:3001 https://api.commerce7.com",
+              // Allow API calls to the configured dev/staging API and Commerce7.
+              `connect-src 'self' ${apiOrigin} https://api.commerce7.com`,
               // Allow embedding from Commerce7 admin and self only
               "frame-ancestors 'self' https://*.commerce7.com",
             ].join("; "),
