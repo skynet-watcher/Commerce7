@@ -1198,7 +1198,7 @@ export function WineryAssistant() {
               >
                 <span>
                   <span className="block text-base font-extrabold">
-                    Know what you want? Browse every strategy
+                    Browse more strategies
                   </span>
                   <span className="mt-1 block text-sm text-[var(--c-text-secondary)]">
                     {RECOMMENDATIONS.length} plays, grouped by goal — start any of them directly.
