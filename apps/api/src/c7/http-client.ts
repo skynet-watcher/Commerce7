@@ -2,7 +2,13 @@ import { z } from "zod";
 
 import { appSyncCreateInputSchema, type AppSyncCreateInput } from "./app-sync-schema.js";
 import { fetchWithBackoff } from "../http/fetch-with-backoff.js";
-import type { Commerce7Client, ListOrdersParams, ListOrdersResult } from "./types.js";
+import type {
+  C7PromotionInput,
+  C7PromotionRef,
+  Commerce7Client,
+  ListOrdersParams,
+  ListOrdersResult,
+} from "./types.js";
 
 const listOrdersResponseSchema = z.object({
   orders: z.array(
@@ -90,6 +96,56 @@ export class HttpCommerce7Client implements Commerce7Client {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(`Commerce7 app-sync failed: HTTP ${res.status} ${text.slice(0, 200)}`);
+    }
+  }
+
+  async createPromotion(tenantId: string, input: C7PromotionInput): Promise<C7PromotionRef> {
+    const res = await this.fetchImpl(`${this.baseUrl}/promotion`, {
+      method: "POST",
+      headers: {
+        Authorization: this.header,
+        tenant: tenantId,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Commerce7 create promotion failed: HTTP ${res.status} ${text.slice(0, 200)}`);
+    }
+    const json = (await res.json()) as { id?: unknown };
+    if (typeof json.id !== "string" || json.id.length === 0) {
+      throw new Error("Commerce7 create promotion: response missing id");
+    }
+    return { id: json.id };
+  }
+
+  async endPromotion(tenantId: string, promotionId: string, endDate: string): Promise<void> {
+    const headers = {
+      Authorization: this.header,
+      tenant: tenantId,
+      Accept: "application/json",
+    };
+    const getRes = await this.fetchImpl(`${this.baseUrl}/promotion/${promotionId}`, {
+      method: "GET",
+      headers,
+    });
+    if (!getRes.ok) {
+      const text = await getRes.text().catch(() => "");
+      throw new Error(`Commerce7 get promotion failed: HTTP ${getRes.status} ${text.slice(0, 200)}`);
+    }
+    const current = (await getRes.json()) as Record<string, unknown>;
+    // PUT expects the full promotion body; send it back with the new endDate.
+    const { id: _id, createdAt: _c, updatedAt: _u, ...body } = current;
+    const putRes = await this.fetchImpl(`${this.baseUrl}/promotion/${promotionId}`, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, endDate }),
+    });
+    if (!putRes.ok) {
+      const text = await putRes.text().catch(() => "");
+      throw new Error(`Commerce7 end promotion failed: HTTP ${putRes.status} ${text.slice(0, 200)}`);
     }
   }
 

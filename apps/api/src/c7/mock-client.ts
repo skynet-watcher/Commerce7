@@ -1,5 +1,11 @@
 import type { AppSyncCreateInput } from "./app-sync-schema.js";
-import type { Commerce7Client, ListOrdersParams, ListOrdersResult } from "./types.js";
+import type {
+  C7PromotionInput,
+  C7PromotionRef,
+  Commerce7Client,
+  ListOrdersParams,
+  ListOrdersResult,
+} from "./types.js";
 
 type PageKey = string;
 
@@ -16,6 +22,8 @@ export class MockCommerce7Client implements Commerce7Client {
   private readonly pages: Map<PageKey, PageSpec>;
   readonly appSyncCalls: { tenantId: string; body: AppSyncCreateInput }[] = [];
   readonly accountUserCalls: { tenantId: string; authorization: string }[] = [];
+  readonly promotionCalls: { tenantId: string; input: C7PromotionInput }[] = [];
+  readonly endPromotionCalls: { tenantId: string; promotionId: string; endDate: string }[] = [];
 
   constructor(pages: Map<PageKey, PageSpec>) {
     this.pages = pages;
@@ -61,6 +69,15 @@ export class MockCommerce7Client implements Commerce7Client {
 
   async createAppSync(tenantId: string, body: AppSyncCreateInput): Promise<void> {
     this.appSyncCalls.push({ tenantId, body: structuredClone(body) });
+  }
+
+  async createPromotion(tenantId: string, input: C7PromotionInput): Promise<C7PromotionRef> {
+    this.promotionCalls.push({ tenantId, input: structuredClone(input) });
+    return { id: `promo_mock_${this.promotionCalls.length}` };
+  }
+
+  async endPromotion(tenantId: string, promotionId: string, endDate: string): Promise<void> {
+    this.endPromotionCalls.push({ tenantId, promotionId, endDate });
   }
 
   async getAccountUser(tenantId: string, authorization: string) {

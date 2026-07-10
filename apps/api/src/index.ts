@@ -15,6 +15,7 @@ import {
   startBackgroundOrderSyncScheduler,
 } from "./sync/background-scheduler.js";
 import { InMemoryOrderRefPersistence, PgOrderRefPersistence } from "./sync/order-persistence.js";
+import { InMemoryStrategyStore, PgStrategyStore, type StrategyStore } from "./strategies/store.js";
 import { startReconcileScheduler } from "./sync/reconcile-scheduler.js";
 import { InMemorySyncStateStore, PgSyncStateStore, type SyncStateStore } from "./sync/sync-state.js";
 import { PgWebhookDeliveryStore } from "./webhook/pg-store.js";
@@ -72,6 +73,16 @@ function createAnalyticsStore(env: Env, pool: Pool | undefined): AnalyticsEventS
   return new InMemoryAnalyticsEventStore();
 }
 
+function createStrategyStore(env: Env, pool: Pool | undefined): StrategyStore {
+  if (pool) {
+    return new PgStrategyStore(pool);
+  }
+  if (env.NODE_ENV === "production") {
+    throw new Error("DATABASE_URL is required when NODE_ENV=production");
+  }
+  return new InMemoryStrategyStore();
+}
+
 function createOAuthStore(env: Env, pool: Pool | undefined): OAuthSessionStore {
   if (pool) {
     return new PgOAuthSessionStore(pool);
@@ -96,6 +107,7 @@ const webhookStore = createWebhookStore(env, pool);
 const syncStateStore = createSyncStateStore(env, pool);
 const orderPersistence = createOrderPersistence(env, pool);
 const analyticsStore = createAnalyticsStore(env, pool);
+const strategyStore = createStrategyStore(env, pool);
 const oauthStore = createOAuthStore(env, pool);
 const appInstallStore = createAppInstallStore(env, pool);
 const commerce7Client = createCommerce7Client(env);
@@ -145,6 +157,7 @@ const app = createApp({
   },
   reconcileEnabled: true,
   analytics: { store: analyticsStore },
+  strategies: { store: strategyStore },
   oauth: { store: oauthStore, exchange: oauthExchange },
   backgroundSync: { runner: backgroundSyncRunner },
 });

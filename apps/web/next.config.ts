@@ -35,8 +35,9 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self'",
-              // Allow API calls to the configured dev/staging API and Commerce7.
-              `connect-src 'self' ${apiOrigin} https://api.commerce7.com`,
+              // Allow API calls to the configured dev/staging API, the local
+              // gateway, and Commerce7.
+              `connect-src 'self' ${apiOrigin} http://localhost:3001 http://127.0.0.1:3001 https://api.commerce7.com`,
               `frame-ancestors ${commerce7FrameAncestors}`,
               "object-src 'none'",
             ].join("; "),

@@ -19,6 +19,10 @@ import type { AppInstallStore } from "./lifecycle/install-store.js";
 import { parseTypedPayload } from "./lifecycle/parse-payload.js";
 import type { OAuthSessionStore } from "./oauth/oauth-store.js";
 import { exchangeOAuthCode, type OAuthTokenExchangeConfig } from "./oauth/token-exchange.js";
+import { strategyCreateBodySchema, snapshotFromByName } from "./strategies/schema.js";
+import type { StrategyStore } from "./strategies/store.js";
+import { promotionInputForStrategy } from "./strategies/promotion.js";
+import { computeVerdict } from "./strategies/verdict.js";
 import type { BackgroundOrderSyncRunner } from "./sync/background-scheduler.js";
 import { reconcileSyncedOrders } from "./sync/reconcile.js";
 import type { OrderRefPersistence } from "./sync/order-persistence.js";
@@ -117,6 +121,12 @@ export type CreateAppOptions = {
   oauth?: { store: OAuthSessionStore; exchange?: OAuthTokenExchangeConfig };
   /** Background / merchant-triggered sync status and one-shot runner. */
   backgroundSync?: { runner: BackgroundOrderSyncRunner };
+  /**
+   * Merchant strategies (assistant plays): create with optional Commerce7
+   * promotion (auto-expiring at the review date), list with honest verdicts,
+   * end early. Requires `sync` (C7 client) and `analytics` to be wired.
+   */
+  strategies?: { store: StrategyStore };
 };
 
 export function createApp(options: CreateAppOptions): Hono {
@@ -440,6 +450,150 @@ export function createApp(options: CreateAppOptions): Hono {
         range: { startDate: startDate.value, endDate: endDate.value },
       });
       return c.json(payload);
+    });
+  }
+
+  if (options.strategies && sync && analytics?.store) {
+    const strategyStore = options.strategies.store;
+    const c7Client = sync.client;
+    const analyticsStore = analytics.store;
+
+    const currentSnapshot = async (tenantId: string) => {
+      const summary = await analyticsStore.summarizeTenant(tenantId);
+      return snapshotFromByName(summary.byName, summary.totalEvents);
+    };
+
+    app.post("/v1/strategies", async (c) => {
+      const denied = denyUnlessInternalBearer(c, internalApiToken);
+      if (denied) return denied;
+
+      let json: unknown;
+      try {
+        json = await c.req.json();
+      } catch {
+        return c.json({ error: "invalid_json" }, 400);
+      }
+      const parsed = strategyCreateBodySchema.safeParse(json);
+      if (!parsed.success) {
+        return c.json({ error: "validation_error", details: parsed.error.flatten() }, 400);
+      }
+      const body = parsed.data;
+
+      const startedAt = new Date();
+      const reviewAt = new Date(startedAt.getTime() + body.testDays * 86_400_000);
+      const baseline = await currentSnapshot(body.tenantId);
+
+      const record = await strategyStore.create({
+        tenantId: body.tenantId,
+        title: body.title,
+        message: body.message,
+        offer: body.offer ?? null,
+        promotionId: null,
+        startedAt,
+        reviewAt,
+        testDays: body.testDays,
+        baseline,
+      });
+
+      // The offer becomes a real Commerce7 promotion that expires with the
+      // test window. A failed push never fails the strategy — the merchant
+      // gets the message either way, and the response says so honestly.
+      let promotionId: string | null = null;
+      let promotionError: string | null = null;
+      if (body.offer) {
+        try {
+          const promo = await c7Client.createPromotion(
+            body.tenantId,
+            promotionInputForStrategy({
+              title: body.title,
+              message: body.message,
+              offer: body.offer,
+              startedAt,
+              reviewAt,
+            }),
+          );
+          promotionId = promo.id;
+          await strategyStore.setPromotionId(body.tenantId, record.id, promotionId);
+        } catch (e) {
+          promotionError = e instanceof Error ? e.message : String(e);
+        }
+      }
+
+      return c.json(
+        {
+          strategy: { ...record, promotionId },
+          verdict: computeVerdict({ ...record, promotionId }, baseline),
+          promotionError,
+        },
+        201,
+      );
+    });
+
+    app.get("/v1/strategies", async (c) => {
+      const denied = denyUnlessInternalBearer(c, internalApiToken);
+      if (denied) return denied;
+
+      const tenantId = c.req.query("tenantId")?.trim() ?? "";
+      if (!tenantId) {
+        return c.json(
+          { error: "validation_error", details: { tenantId: ["Query param tenantId is required"] } },
+          400,
+        );
+      }
+      const rows = await strategyStore.listByTenant(tenantId);
+      const current = await currentSnapshot(tenantId);
+      return c.json({
+        tenantId,
+        generatedAt: new Date().toISOString(),
+        strategies: rows.map((row) => ({ strategy: row, verdict: computeVerdict(row, current) })),
+      });
+    });
+
+    app.post("/v1/strategies/:id/end", async (c) => {
+      const denied = denyUnlessInternalBearer(c, internalApiToken);
+      if (denied) return denied;
+
+      const id = c.req.param("id");
+      let json: unknown = {};
+      try {
+        json = await c.req.json();
+      } catch {
+        /* body optional */
+      }
+      const tenantId =
+        typeof (json as { tenantId?: unknown }).tenantId === "string"
+          ? ((json as { tenantId: string }).tenantId).trim()
+          : "";
+      if (!tenantId) {
+        return c.json(
+          { error: "validation_error", details: { tenantId: ["Body field tenantId is required"] } },
+          400,
+        );
+      }
+
+      const existing = await strategyStore.get(tenantId, id);
+      if (!existing) {
+        return c.json({ error: "not_found" }, 404);
+      }
+
+      const endedAt = new Date();
+      const record = (await strategyStore.markEnded(tenantId, id, endedAt)) ?? existing;
+
+      let promotionError: string | null = null;
+      if (existing.promotionId) {
+        try {
+          await c7Client.endPromotion(tenantId, existing.promotionId, endedAt.toISOString());
+        } catch (e) {
+          promotionError = e instanceof Error ? e.message : String(e);
+        }
+      }
+
+      const current = await currentSnapshot(tenantId);
+      return c.json({
+        strategy: record,
+        verdict: computeVerdict(record, current),
+        promotionError,
+      });
     });
   }
 

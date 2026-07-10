@@ -74,6 +74,10 @@ type RunningStrategy = {
   custom?: { goal: StrategyGoal; audience: string; placement: string };
   /** Optional discount behind the play; ends at reviewAt. */
   offer?: PlayOffer;
+  /** Set when the strategy was pushed to the gateway API (POST /v1/strategies). */
+  serverId?: string;
+  /** Commerce7 promotion id backing the offer, when the push created one. */
+  promotionId?: string | null;
 };
 
 type PlayAudience = "Everyone" | "First-time visitors" | "Past buyers" | "Shoppers with wine in their cart";
@@ -823,6 +827,50 @@ export function WineryAssistant() {
   const primary = recommendations[0];
   const alternates = recommendations.slice(1, 3);
 
+  /**
+   * Push a started strategy to the gateway API. On success the offer becomes
+   * a real Commerce7 promotion that auto-expires at the review date. Fails
+   * quietly — the local strategy still runs in sample mode.
+   */
+  const pushStrategy = useCallback(
+    (strategy: RunningStrategy) => {
+      const tid = tenant.trim();
+      if (!tid) return;
+      void fetch(`${apiBase.replace(/\/+$/, "")}/v1/strategies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantId: tid,
+          title: strategy.title,
+          message: strategy.message,
+          offer: strategy.offer,
+          testDays: strategy.testDays,
+        }),
+      })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const json = (await res.json()) as {
+            strategy?: { id?: string; promotionId?: string | null };
+          };
+          const serverId = json.strategy?.id;
+          if (!serverId) return;
+          setStrategies((current) => {
+            const next = current.map((s) =>
+              s.id === strategy.id
+                ? { ...s, serverId, promotionId: json.strategy?.promotionId ?? null }
+                : s,
+            );
+            writeStrategies(next);
+            return next;
+          });
+        })
+        .catch(() => {
+          /* sample mode — nothing to do */
+        });
+    },
+    [apiBase, tenant],
+  );
+
   const startStrategy = useCallback(
     (rec: Recommendation, message: string, offer?: PlayOffer) => {
       const startedAt = new Date().toISOString();
@@ -847,8 +895,9 @@ export function WineryAssistant() {
       setConfirming(null);
       setJustStartedId(strategy.id);
       setStep(3);
+      pushStrategy(strategy);
     },
-    [overview],
+    [overview, pushStrategy],
   );
 
   const startCustomPlay = useCallback(() => {
@@ -879,7 +928,8 @@ export function WineryAssistant() {
     setPlayOffer("No offer");
     setJustStartedId(strategy.id);
     setStep(3);
-  }, [overview, playAudience, playCustom, playGoal, playMessage, playOffer, playPlacement]);
+    pushStrategy(strategy);
+  }, [overview, playAudience, playCustom, playGoal, playMessage, playOffer, playPlacement, pushStrategy]);
 
   const setStrategyStatus = useCallback((id: string, status: "running" | "paused") => {
     setStrategies((current) => {
@@ -889,13 +939,30 @@ export function WineryAssistant() {
     });
   }, []);
 
-  const removeStrategy = useCallback((id: string) => {
-    setStrategies((current) => {
-      const next = current.filter((s) => s.id !== id);
-      writeStrategies(next);
-      return next;
-    });
-  }, []);
+  const removeStrategy = useCallback(
+    (id: string) => {
+      setStrategies((current) => {
+        const target = current.find((s) => s.id === id);
+        // Ending server-side also ends the Commerce7 promotion behind the offer.
+        if (target?.serverId && tenant.trim()) {
+          void fetch(
+            `${apiBase.replace(/\/+$/, "")}/v1/strategies/${encodeURIComponent(target.serverId)}/end`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ tenantId: tenant.trim() }),
+            },
+          ).catch(() => {
+            /* sample mode */
+          });
+        }
+        const next = current.filter((s) => s.id !== id);
+        writeStrategies(next);
+        return next;
+      });
+    },
+    [apiBase, tenant],
+  );
 
   const headerNumbers = numbersFrom(overview);
   const openConfirm = useCallback(
@@ -1318,8 +1385,15 @@ export function WineryAssistant() {
                       </div>
                     </div>
 
-                    {strategy.custom || strategy.offer ? (
+                    {strategy.custom || strategy.offer || strategy.serverId ? (
                       <div className="mt-3 flex flex-wrap gap-2">
+                        {strategy.serverId ? (
+                          <span className="rounded-full border border-[var(--c-green-border)] bg-[var(--c-green-bg)] px-3 py-1 text-[11px] font-bold text-[var(--c-green-text)]">
+                            {strategy.promotionId
+                              ? "Live — discount active in your store"
+                              : "Live in your store"}
+                          </span>
+                        ) : null}
                         {strategy.custom ? (
                           <>
                             <span className="rounded-full border border-[var(--c-brand)] bg-[var(--c-brand-light)] px-3 py-1 text-[11px] font-bold text-[var(--c-brand)]">
