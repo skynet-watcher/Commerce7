@@ -39,8 +39,11 @@ type CheckItem = {
   meaning: string;
 };
 
+type StrategyGoal = "Bigger orders" | "Loyalty & club" | "New visitors" | "Tune what's running";
+
 type Recommendation = {
   id: string;
+  goal: StrategyGoal;
   title: string;
   tagline: string;
   why: string;
@@ -316,6 +319,7 @@ function buildCheckup(overview: Overview, live: boolean): CheckItem[] {
 const RECOMMENDATIONS: Recommendation[] = [
   {
     id: "free-shipping-nudge",
+    goal: "Bigger orders",
     title: "Free shipping reminder in the cart",
     tagline: "Your easiest first win",
     why: "Shoppers with one or two bottles in the cart often don't realize how close they are to free shipping. A friendly reminder is the single most reliable way to turn a 2-bottle order into a 6-bottle order.",
@@ -328,7 +332,36 @@ const RECOMMENDATIONS: Recommendation[] = [
     effort: "Live in about a minute",
   },
   {
+    id: "half-case-upgrade",
+    goal: "Bigger orders",
+    title: "Half-case upgrade nudge",
+    tagline: "Four bottles is almost six",
+    why: "A shopper with four bottles in the cart is one small nudge away from a half-case. Pairing the ask with a modest saving makes it feel like a smart move rather than an upsell.",
+    defaultMessage: "Make it a half-case — add 2 more bottles and save 10% on the lot.",
+    steps: [
+      "Shows to shoppers with 3–5 bottles in their cart",
+      "Works best tied to a half-case discount you already offer",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
+    id: "perfect-pairing",
+    goal: "Bigger orders",
+    title: "Perfect pairing suggestion",
+    tagline: "The tasting-room upsell, online",
+    why: "In the tasting room you'd naturally say \"if you like that, try this.\" This does the same in the cart: it suggests one bottle that pairs with what the shopper already picked.",
+    defaultMessage: "Guests who take home this Chardonnay usually grab our Rosé too — add one?",
+    steps: [
+      "We suggest one wine based on what's already in the cart",
+      "The suggestion updates as the cart changes",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
     id: "club-invite",
+    goal: "Loyalty & club",
     title: "Wine club invitation for repeat buyers",
     tagline: "Turn regulars into members",
     why: "Shoppers on their second or third order already love your wine. A quiet club invitation at that moment converts far better than a banner on the homepage.",
@@ -341,7 +374,50 @@ const RECOMMENDATIONS: Recommendation[] = [
     effort: "Live in about a minute",
   },
   {
+    id: "welcome-back-reorder",
+    goal: "Loyalty & club",
+    title: "Welcome back, your favourite's in stock",
+    tagline: "Make reordering effortless",
+    why: "Past buyers are your best buyers, but reordering takes effort. Greeting a returning shopper with the wine they bought last time removes every step between \"I liked that\" and \"it's in my cart.\"",
+    defaultMessage: "Welcome back — the Pinot you ordered last time is in stock. Same again?",
+    steps: [
+      "Shows only to shoppers we recognize from a past order",
+      "Features the wine from their last order, one click to add",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
+    id: "limited-release",
+    goal: "Loyalty & club",
+    title: "Limited release heads-up",
+    tagline: "Scarcity, told honestly",
+    why: "When a small-lot wine is genuinely limited, saying so is the most effective message you can run. It rewards loyal shoppers and gives fence-sitters a real reason to decide today.",
+    defaultMessage: "Only 40 cases of this year's reserve red — once it's gone, it's gone until next fall.",
+    steps: [
+      "Shows on the wine you choose, while stock lasts",
+      "Best for wines that are truly limited — shoppers can tell",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
+    id: "first-visit-welcome",
+    goal: "New visitors",
+    title: "First-visit welcome",
+    tagline: "Open the door properly",
+    why: "A first-time visitor doesn't know where to start on a page of forty wines. A short welcome pointing at your tasting-room favourites gives them the same easy entry a pour at the bar would.",
+    defaultMessage: "New here? Our tasting-room favourites six-pack is the easiest way to find your wine.",
+    steps: [
+      "Shows only to shoppers we haven't seen before",
+      "Points to a starter collection you choose",
+      "You can edit or pause it any time",
+    ],
+    effort: "Live in about a minute",
+  },
+  {
     id: "sharpen-message",
+    goal: "Tune what's running",
     title: "Sharpen your current cart message",
     tagline: "Small wording change, real difference",
     why: "Your cart message is being seen, but fewer shoppers are clicking than we'd expect. Messages with a specific number (\"2 bottles away\") reliably beat vague ones (\"almost there\").",
@@ -355,6 +431,13 @@ const RECOMMENDATIONS: Recommendation[] = [
   },
 ];
 
+const STRATEGY_GOALS: StrategyGoal[] = [
+  "Bigger orders",
+  "Loyalty & club",
+  "New visitors",
+  "Tune what's running",
+];
+
 function pickRecommendations(overview: Overview, running: RunningStrategy[]): Recommendation[] {
   const carrotSlice = overview.analytics.cartCarrot;
   const carrotShown = carrotSlice.byEventName.impression ?? carrotSlice.total;
@@ -363,10 +446,13 @@ function pickRecommendations(overview: Overview, running: RunningStrategy[]): Re
 
   const startedIds = new Set(running.map((s) => s.recommendationId));
   const ordered = lowClickRate
-    ? ["sharpen-message", "free-shipping-nudge", "club-invite"]
-    : ["free-shipping-nudge", "club-invite", "sharpen-message"];
+    ? ["sharpen-message", "free-shipping-nudge", "perfect-pairing"]
+    : ["free-shipping-nudge", "club-invite", "welcome-back-reorder"];
 
-  const pool = ordered
+  const pool = [
+    ...ordered,
+    ...RECOMMENDATIONS.map((r) => r.id).filter((id) => !ordered.includes(id)),
+  ]
     .map((id) => RECOMMENDATIONS.find((r) => r.id === id))
     .filter((r): r is Recommendation => Boolean(r))
     .filter((r) => !startedIds.has(r.id));
@@ -462,8 +548,10 @@ export function WineryAssistant() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [strategies, setStrategies] = useState<RunningStrategy[]>([]);
   const [confirming, setConfirming] = useState<Recommendation | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
   const [draftMessage, setDraftMessage] = useState("");
   const [justStartedId, setJustStartedId] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -572,10 +660,18 @@ export function WineryAssistant() {
   }, []);
 
   const headerNumbers = numbersFrom(overview);
-  const messageFor = useCallback(
-    (rec: Recommendation) =>
-      rec.id === primary?.id && draftMessage.trim() ? draftMessage.trim() : rec.defaultMessage,
+  const openConfirm = useCallback(
+    (rec: Recommendation) => {
+      setConfirmMessage(
+        rec.id === primary?.id && draftMessage.trim() ? draftMessage.trim() : rec.defaultMessage,
+      );
+      setConfirming(rec);
+    },
     [draftMessage, primary],
+  );
+  const startedRecommendationIds = useMemo(
+    () => new Set(strategies.map((s) => s.recommendationId)),
+    [strategies],
   );
 
   return (
@@ -743,7 +839,7 @@ export function WineryAssistant() {
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setConfirming(primary)}
+                    onClick={() => openConfirm(primary)}
                     className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
                   >
                     Review and start →
@@ -769,10 +865,7 @@ export function WineryAssistant() {
                     <p className="mt-2 text-sm leading-5 text-[var(--c-text-secondary)]">{rec.why}</p>
                     <button
                       type="button"
-                      onClick={() => {
-                        setDraftMessage("");
-                        setConfirming(rec);
-                      }}
+                      onClick={() => openConfirm(rec)}
                       className="mt-4 rounded-full border border-[var(--c-brand)] px-4 py-2 text-xs font-bold text-[var(--c-brand)] hover:bg-[var(--c-brand-light)]"
                     >
                       Start this instead
@@ -781,6 +874,87 @@ export function WineryAssistant() {
                 ))}
               </section>
             ) : null}
+
+            {/* Strategy library — for owners who want to take charge */}
+            <section className="rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)]">
+              <button
+                type="button"
+                onClick={() => setLibraryOpen((open) => !open)}
+                className="flex w-full flex-wrap items-center justify-between gap-2 p-5 text-left sm:px-8"
+                aria-expanded={libraryOpen}
+              >
+                <span>
+                  <span className="block text-base font-extrabold">
+                    Know what you want? Browse every strategy
+                  </span>
+                  <span className="mt-1 block text-sm text-[var(--c-text-secondary)]">
+                    {RECOMMENDATIONS.length} plays, grouped by goal — start any of them directly.
+                  </span>
+                </span>
+                <span className="text-xl font-bold text-[var(--c-brand)]" aria-hidden>
+                  {libraryOpen ? "−" : "+"}
+                </span>
+              </button>
+
+              {libraryOpen ? (
+                <div className="space-y-6 border-t border-[var(--c-border)] p-5 sm:px-8">
+                  {STRATEGY_GOALS.map((goal) => {
+                    const plays = RECOMMENDATIONS.filter((r) => r.goal === goal);
+                    if (plays.length === 0) return null;
+                    return (
+                      <div key={goal}>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--c-brand)]">
+                          {goal}
+                        </h3>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {plays.map((rec) => {
+                            const isRunning = startedRecommendationIds.has(rec.id);
+                            return (
+                              <div
+                                key={rec.id}
+                                className="flex flex-col rounded-xl border border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-4"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="text-sm font-extrabold leading-5">{rec.title}</h4>
+                                  {isRunning ? (
+                                    <span className="shrink-0 rounded-full border border-[var(--c-green-border)] bg-[var(--c-green-bg)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--c-green-text)]">
+                                      Running
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="mt-1 text-xs font-semibold text-[var(--c-text-label)]">
+                                  {rec.tagline}
+                                </p>
+                                <p className="mt-2 flex-1 text-[13px] leading-5 text-[var(--c-text-secondary)]">
+                                  {rec.why}
+                                </p>
+                                {isRunning ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setStep(3)}
+                                    className="mt-3 self-start rounded-full border border-[var(--c-border)] px-4 py-1.5 text-xs font-bold text-[var(--c-text-secondary)] hover:border-[var(--c-brand)]"
+                                  >
+                                    See results
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => openConfirm(rec)}
+                                    className="mt-3 self-start rounded-full border border-[var(--c-brand)] px-4 py-1.5 text-xs font-bold text-[var(--c-brand)] hover:bg-[var(--c-brand-light)]"
+                                  >
+                                    Start this one
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </section>
           </>
         ) : null}
         {step === 2 && !primary ? (
@@ -952,7 +1126,14 @@ export function WineryAssistant() {
               <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                 Shoppers will see
               </p>
-              <p className="mt-1 text-sm font-semibold leading-6">{messageFor(confirming)}</p>
+              <textarea
+                className="mt-2 w-full resize-none rounded-lg border border-transparent bg-transparent text-sm font-semibold leading-6 outline-none focus:border-[var(--c-border-focus)]"
+                rows={2}
+                value={confirmMessage}
+                onChange={(e) => setConfirmMessage(e.target.value)}
+                aria-label="Edit the message shoppers will see"
+              />
+              <p className="text-[11px] text-[var(--c-text-muted)]">Tap the message to edit it.</p>
             </div>
             <ul className="mt-4 space-y-2">
               {confirming.steps.map((s) => (
@@ -969,7 +1150,7 @@ export function WineryAssistant() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => startStrategy(confirming, messageFor(confirming))}
+                onClick={() => startStrategy(confirming, confirmMessage.trim() || confirming.defaultMessage)}
                 className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
               >
                 Start it
