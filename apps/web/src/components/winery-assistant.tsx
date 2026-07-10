@@ -50,6 +50,7 @@ type Recommendation = {
   defaultMessage: string;
   steps: string[];
   effort: string;
+  suggestedOffer?: PlayOffer;
 };
 
 type StrategyNumbers = {
@@ -69,7 +70,41 @@ type RunningStrategy = {
   testDays: number;
   baseline: StrategyNumbers;
   status: "running" | "paused";
+  /** Present on plays the owner built themselves. */
+  custom?: { goal: StrategyGoal; audience: string; placement: string };
+  /** Optional discount behind the play; ends at reviewAt. */
+  offer?: PlayOffer;
 };
+
+type PlayAudience = "Everyone" | "First-time visitors" | "Past buyers" | "Shoppers with wine in their cart";
+type PlayPlacement = "In the cart" | "On wine pages";
+
+/**
+ * An optional discount behind a play. When the Commerce7 wiring lands this
+ * becomes a real `POST /promotion` (percentage/shipping discount, ending at
+ * the strategy's review date so offers never outlive their test window).
+ */
+type PlayOffer = { kind: "percent"; value: number } | { kind: "free-shipping" };
+
+const OFFER_CHOICES = ["No offer", "5% off", "10% off", "15% off", "Free shipping"] as const;
+type OfferChoice = (typeof OFFER_CHOICES)[number];
+
+function offerFromChoice(choice: OfferChoice): PlayOffer | undefined {
+  if (choice === "Free shipping") return { kind: "free-shipping" };
+  const percent = choice.match(/^(\d+)% off$/);
+  if (percent) return { kind: "percent", value: Number(percent[1]) };
+  return undefined;
+}
+
+function choiceFromOffer(offer: PlayOffer | undefined): OfferChoice {
+  if (!offer) return "No offer";
+  if (offer.kind === "free-shipping") return "Free shipping";
+  return `${offer.value}% off` as OfferChoice;
+}
+
+function offerLabel(offer: PlayOffer): string {
+  return offer.kind === "free-shipping" ? "Free shipping" : `${offer.value}% off`;
+}
 
 /* ── Demo data — keeps the app fully working with no store connected ───── */
 
@@ -330,6 +365,7 @@ const RECOMMENDATIONS: Recommendation[] = [
       "You can edit or pause it any time",
     ],
     effort: "Live in about a minute",
+    suggestedOffer: { kind: "free-shipping" },
   },
   {
     id: "half-case-upgrade",
@@ -344,6 +380,7 @@ const RECOMMENDATIONS: Recommendation[] = [
       "You can edit or pause it any time",
     ],
     effort: "Live in about a minute",
+    suggestedOffer: { kind: "percent", value: 10 },
   },
   {
     id: "perfect-pairing",
@@ -358,6 +395,7 @@ const RECOMMENDATIONS: Recommendation[] = [
       "You can edit or pause it any time",
     ],
     effort: "Live in about a minute",
+    suggestedOffer: { kind: "percent", value: 10 },
   },
   {
     id: "club-invite",
@@ -437,6 +475,45 @@ const STRATEGY_GOALS: StrategyGoal[] = [
   "New visitors",
   "Tune what's running",
 ];
+
+const PLAY_GOALS: StrategyGoal[] = ["Bigger orders", "Loyalty & club", "New visitors"];
+const PLAY_AUDIENCES: PlayAudience[] = [
+  "Everyone",
+  "First-time visitors",
+  "Past buyers",
+  "Shoppers with wine in their cart",
+];
+const PLAY_PLACEMENTS: PlayPlacement[] = ["In the cart", "On wine pages"];
+
+/** A sensible starter message for whatever combination the owner picks. */
+function starterMessage(goal: StrategyGoal, audience: PlayAudience, placement: PlayPlacement): string {
+  if (audience === "First-time visitors") {
+    return "Welcome in — our tasting-room favourites are the easiest place to start.";
+  }
+  if (audience === "Past buyers") {
+    return goal === "Loyalty & club"
+      ? "Good to see you again — club members get first pick of every new release."
+      : "Welcome back — your favourites are in stock, and a few new things arrived too.";
+  }
+  if (audience === "Shoppers with wine in their cart") {
+    return placement === "In the cart"
+      ? "Nice picks — add 2 more bottles and shipping is on us."
+      : "That wine loves company — see what our winemaker pairs it with.";
+  }
+  return goal === "New visitors"
+    ? "New here? Start with the six wines our tasting room pours most."
+    : "This month's featured wine comes with free shipping on any half-case.";
+}
+
+function customPlayTitle(audience: PlayAudience, placement: PlayPlacement): string {
+  const who: Record<PlayAudience, string> = {
+    Everyone: "every shopper",
+    "First-time visitors": "first-time visitors",
+    "Past buyers": "past buyers",
+    "Shoppers with wine in their cart": "shoppers mid-cart",
+  };
+  return `Your play: a note for ${who[audience]} ${placement === "In the cart" ? "in the cart" : "on wine pages"}`;
+}
 
 function pickRecommendations(overview: Overview, running: RunningStrategy[]): Recommendation[] {
   const carrotSlice = overview.analytics.cartCarrot;
@@ -533,6 +610,42 @@ function StepPill(props: { number: number; label: string; active: boolean; done:
   );
 }
 
+function ChoiceChips<T extends string>(props: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+        {props.label}
+      </legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {props.options.map((option) => {
+          const active = option === props.value;
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => props.onChange(option)}
+              aria-pressed={active}
+              className={[
+                "rounded-full border px-4 py-2 text-xs font-bold transition-colors",
+                active
+                  ? "border-[var(--c-brand)] bg-[var(--c-brand)] text-white"
+                  : "border-[var(--c-border)] bg-[var(--c-bg-card)] text-[var(--c-text-secondary)] hover:border-[var(--c-brand)]",
+              ].join(" ")}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 /* ── Main component ────────────────────────────────────────────────────── */
 
 export function WineryAssistant() {
@@ -549,9 +662,16 @@ export function WineryAssistant() {
   const [strategies, setStrategies] = useState<RunningStrategy[]>([]);
   const [confirming, setConfirming] = useState<Recommendation | null>(null);
   const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmOffer, setConfirmOffer] = useState<OfferChoice>("No offer");
   const [draftMessage, setDraftMessage] = useState("");
   const [justStartedId, setJustStartedId] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [playGoal, setPlayGoal] = useState<StrategyGoal>("Bigger orders");
+  const [playAudience, setPlayAudience] = useState<PlayAudience>("Everyone");
+  const [playPlacement, setPlayPlacement] = useState<PlayPlacement>("In the cart");
+  const [playMessage, setPlayMessage] = useState("");
+  const [playOffer, setPlayOffer] = useState<OfferChoice>("No offer");
 
   useEffect(() => {
     try {
@@ -617,7 +737,7 @@ export function WineryAssistant() {
   const alternates = recommendations.slice(1, 3);
 
   const startStrategy = useCallback(
-    (rec: Recommendation, message: string) => {
+    (rec: Recommendation, message: string, offer?: PlayOffer) => {
       const startedAt = new Date().toISOString();
       const testDays = 14;
       const strategy: RunningStrategy = {
@@ -630,6 +750,7 @@ export function WineryAssistant() {
         testDays,
         baseline: numbersFrom(overview),
         status: "running",
+        offer,
       };
       setStrategies((current) => {
         const next = [strategy, ...current].slice(0, 10);
@@ -642,6 +763,36 @@ export function WineryAssistant() {
     },
     [overview],
   );
+
+  const startCustomPlay = useCallback(() => {
+    const message = playMessage.trim();
+    if (!message) return;
+    const startedAt = new Date().toISOString();
+    const testDays = 14;
+    const strategy: RunningStrategy = {
+      id: `custom:${startedAt}`,
+      recommendationId: `custom:${startedAt}`,
+      title: customPlayTitle(playAudience, playPlacement),
+      message,
+      startedAt,
+      reviewAt: addDays(startedAt, testDays),
+      testDays,
+      baseline: numbersFrom(overview),
+      status: "running",
+      custom: { goal: playGoal, audience: playAudience, placement: playPlacement },
+      offer: offerFromChoice(playOffer),
+    };
+    setStrategies((current) => {
+      const next = [strategy, ...current].slice(0, 10);
+      writeStrategies(next);
+      return next;
+    });
+    setBuilderOpen(false);
+    setPlayMessage("");
+    setPlayOffer("No offer");
+    setJustStartedId(strategy.id);
+    setStep(3);
+  }, [overview, playAudience, playGoal, playMessage, playOffer, playPlacement]);
 
   const setStrategyStatus = useCallback((id: string, status: "running" | "paused") => {
     setStrategies((current) => {
@@ -665,6 +816,7 @@ export function WineryAssistant() {
       setConfirmMessage(
         rec.id === primary?.id && draftMessage.trim() ? draftMessage.trim() : rec.defaultMessage,
       );
+      setConfirmOffer(choiceFromOffer(rec.suggestedOffer));
       setConfirming(rec);
     },
     [draftMessage, primary],
@@ -847,6 +999,13 @@ export function WineryAssistant() {
                   <p className="text-xs text-[var(--c-text-muted)]">
                     You&apos;ll see exactly what happens before anything goes live.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setBuilderOpen(true)}
+                    className="text-xs font-bold text-[var(--c-brand)] hover:underline"
+                  >
+                    Or make your own play →
+                  </button>
                 </div>
               </div>
             </section>
@@ -952,6 +1111,22 @@ export function WineryAssistant() {
                       </div>
                     );
                   })}
+
+                  <div className="rounded-xl border border-dashed border-[var(--c-brand)] bg-[var(--c-brand-light)] p-4">
+                    <h3 className="text-sm font-extrabold">Have an idea of your own?</h3>
+                    <p className="mt-1 text-[13px] leading-5 text-[var(--c-text-secondary)]">
+                      A release party, a harvest special, free tastings for pickup orders — you know
+                      your winery. Answer three quick questions and write the message; we&apos;ll
+                      measure it just like the others.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setBuilderOpen(true)}
+                      className="mt-3 rounded-full bg-[var(--c-brand)] px-5 py-2 text-xs font-bold text-white hover:bg-[var(--c-brand-hover)]"
+                    >
+                      Make your own play →
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </section>
@@ -1056,6 +1231,29 @@ export function WineryAssistant() {
                       </div>
                     </div>
 
+                    {strategy.custom || strategy.offer ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {strategy.custom ? (
+                          <>
+                            <span className="rounded-full border border-[var(--c-brand)] bg-[var(--c-brand-light)] px-3 py-1 text-[11px] font-bold text-[var(--c-brand)]">
+                              Your own play
+                            </span>
+                            <span className="rounded-full border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-3 py-1 text-[11px] font-bold text-[var(--c-text-secondary)]">
+                              {strategy.custom.audience}
+                            </span>
+                            <span className="rounded-full border border-[var(--c-border)] bg-[var(--c-bg-subtle)] px-3 py-1 text-[11px] font-bold text-[var(--c-text-secondary)]">
+                              {strategy.custom.placement}
+                            </span>
+                          </>
+                        ) : null}
+                        {strategy.offer ? (
+                          <span className="rounded-full border border-[var(--c-green-border)] bg-[var(--c-green-bg)] px-3 py-1 text-[11px] font-bold text-[var(--c-green-text)]">
+                            Offer: {offerLabel(strategy.offer)} — ends {friendlyDate(strategy.reviewAt)}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
                     <div className="mt-4 rounded-xl border border-dashed border-[var(--c-border)] bg-[var(--c-bg-subtle)] p-3">
                       <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
                         The message shoppers see
@@ -1109,6 +1307,118 @@ export function WineryAssistant() {
         ) : null}
       </main>
 
+      {/* ── Make-your-own-play dialog ───────────────────────────────────── */}
+      {builderOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Make your own play"
+        >
+          <div className="my-8 w-full max-w-xl rounded-2xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-6 shadow-xl sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--c-brand)]">
+              Your play
+            </p>
+            <h2 className="mt-2 text-xl font-extrabold">Three questions, then your message</h2>
+
+            <div className="mt-5 space-y-5">
+              <ChoiceChips
+                label="1 · What are you after?"
+                options={PLAY_GOALS}
+                value={playGoal}
+                onChange={setPlayGoal}
+              />
+              <ChoiceChips
+                label="2 · Who should see it?"
+                options={PLAY_AUDIENCES}
+                value={playAudience}
+                onChange={setPlayAudience}
+              />
+              <ChoiceChips
+                label="3 · Where does it show?"
+                options={PLAY_PLACEMENTS}
+                value={playPlacement}
+                onChange={setPlayPlacement}
+              />
+              <div>
+                <ChoiceChips
+                  label="4 · Sweeten it with an offer? (optional)"
+                  options={OFFER_CHOICES}
+                  value={playOffer}
+                  onChange={setPlayOffer}
+                />
+                {playOffer !== "No offer" ? (
+                  <p className="mt-2 text-xs leading-5 text-[var(--c-amber-text)]">
+                    <strong>{playOffer}</strong> is a real discount in your store. It ends
+                    automatically when the two-week test ends, and you can end it sooner any time.
+                  </p>
+                ) : null}
+              </div>
+
+              <div>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                    Your message to shoppers
+                  </span>
+                  <textarea
+                    className="mt-2 w-full rounded-xl border border-[var(--c-border)] bg-[var(--c-bg-card)] p-3 text-sm leading-6 outline-none focus:border-[var(--c-border-focus)]"
+                    rows={2}
+                    maxLength={160}
+                    placeholder={starterMessage(playGoal, playAudience, playPlacement)}
+                    value={playMessage}
+                    onChange={(e) => setPlayMessage(e.target.value)}
+                  />
+                </label>
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPlayMessage(starterMessage(playGoal, playAudience, playPlacement))}
+                    className="text-xs font-bold text-[var(--c-brand)] hover:underline"
+                  >
+                    Use this starter
+                  </button>
+                  <span className="text-[11px] text-[var(--c-text-muted)]">
+                    Short and specific works best — one offer, one next step.
+                  </span>
+                </div>
+              </div>
+
+              {playMessage.trim() ? (
+                <div className="rounded-xl border border-dashed border-[var(--c-brand)] bg-[var(--c-brand-light)] p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--c-text-label)]">
+                    {playAudience} will see this {playPlacement.toLowerCase()}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold leading-6">{playMessage.trim()}</p>
+                </div>
+              ) : null}
+
+              <p className="rounded-xl bg-[var(--c-bg-subtle)] p-3 text-xs leading-5 text-[var(--c-text-secondary)]">
+                Same deal as our suggestions: we&apos;ll watch it for two weeks and tell you plainly
+                whether it&apos;s working. You can edit, pause, or remove it any time.
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={startCustomPlay}
+                disabled={!playMessage.trim()}
+                className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)] disabled:cursor-not-allowed disabled:bg-[var(--c-disabled-bg)]"
+              >
+                Start my play
+              </button>
+              <button
+                type="button"
+                onClick={() => setBuilderOpen(false)}
+                className="rounded-full border border-[var(--c-border)] px-6 py-3 text-sm font-bold text-[var(--c-text-secondary)] hover:border-[var(--c-brand)]"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* ── Confirm dialog ──────────────────────────────────────────────── */}
       {confirming ? (
         <div
@@ -1143,6 +1453,22 @@ export function WineryAssistant() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-4">
+              <ChoiceChips
+                label="Sweeten it with an offer?"
+                options={OFFER_CHOICES}
+                value={confirmOffer}
+                onChange={setConfirmOffer}
+              />
+              {confirmOffer !== "No offer" ? (
+                <p className="mt-2 text-xs leading-5 text-[var(--c-amber-text)]">
+                  <strong>{confirmOffer}</strong> is a real discount in your store. It ends
+                  automatically when the two-week test ends, and you can end it sooner any time.
+                </p>
+              ) : null}
+            </div>
+
             <p className="mt-4 rounded-xl bg-[var(--c-bg-subtle)] p-3 text-xs leading-5 text-[var(--c-text-secondary)]">
               We&apos;ll watch the results for two weeks and tell you plainly whether it&apos;s
               working. You can edit, pause, or remove it any time — nothing is permanent.
@@ -1150,7 +1476,13 @@ export function WineryAssistant() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => startStrategy(confirming, confirmMessage.trim() || confirming.defaultMessage)}
+                onClick={() =>
+                  startStrategy(
+                    confirming,
+                    confirmMessage.trim() || confirming.defaultMessage,
+                    offerFromChoice(confirmOffer),
+                  )
+                }
                 className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
               >
                 Start it
