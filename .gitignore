@@ -12,3 +12,6 @@ out/
 .pnpm-debug.log*
 __pycache__/
 *.pyc
+
+# Local Netlify folder
+.netlify
