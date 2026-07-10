@@ -84,13 +84,30 @@ type PlayPlacement = "In the cart" | "On wine pages";
  * becomes a real `POST /promotion` (percentage/shipping discount, ending at
  * the strategy's review date so offers never outlive their test window).
  */
-type PlayOffer = { kind: "percent"; value: number } | { kind: "free-shipping" };
+type PlayOffer =
+  | { kind: "percent"; value: number }
+  | { kind: "dollar"; value: number }
+  | { kind: "free-shipping" };
 
-const OFFER_CHOICES = ["No offer", "5% off", "10% off", "15% off", "Free shipping"] as const;
+const OFFER_CHOICES = ["No offer", "5% off", "10% off", "15% off", "Free shipping", "Custom…"] as const;
 type OfferChoice = (typeof OFFER_CHOICES)[number];
 
-function offerFromChoice(choice: OfferChoice): PlayOffer | undefined {
+/** Integrity caps: deep discounts cheapen the wine and are almost never the answer. */
+const MAX_CUSTOM_PERCENT = 40;
+const MAX_CUSTOM_DOLLARS = 100;
+
+type CustomOfferDraft = { unit: "percent" | "dollar"; amount: string };
+
+function customOfferFromDraft(draft: CustomOfferDraft): PlayOffer | undefined {
+  const raw = Number.parseInt(draft.amount, 10);
+  if (!Number.isFinite(raw) || raw <= 0) return undefined;
+  if (draft.unit === "percent") return { kind: "percent", value: Math.min(raw, MAX_CUSTOM_PERCENT) };
+  return { kind: "dollar", value: Math.min(raw, MAX_CUSTOM_DOLLARS) };
+}
+
+function offerFromChoice(choice: OfferChoice, custom: CustomOfferDraft): PlayOffer | undefined {
   if (choice === "Free shipping") return { kind: "free-shipping" };
+  if (choice === "Custom…") return customOfferFromDraft(custom);
   const percent = choice.match(/^(\d+)% off$/);
   if (percent) return { kind: "percent", value: Number(percent[1]) };
   return undefined;
@@ -99,11 +116,16 @@ function offerFromChoice(choice: OfferChoice): PlayOffer | undefined {
 function choiceFromOffer(offer: PlayOffer | undefined): OfferChoice {
   if (!offer) return "No offer";
   if (offer.kind === "free-shipping") return "Free shipping";
-  return `${offer.value}% off` as OfferChoice;
+  if (offer.kind === "percent" && [5, 10, 15].includes(offer.value)) {
+    return `${offer.value}% off` as OfferChoice;
+  }
+  return "Custom…";
 }
 
 function offerLabel(offer: PlayOffer): string {
-  return offer.kind === "free-shipping" ? "Free shipping" : `${offer.value}% off`;
+  if (offer.kind === "free-shipping") return "Free shipping";
+  if (offer.kind === "dollar") return `$${offer.value} off`;
+  return `${offer.value}% off`;
 }
 
 /* ── Demo data — keeps the app fully working with no store connected ───── */
@@ -646,6 +668,69 @@ function ChoiceChips<T extends string>(props: {
   );
 }
 
+function OfferPicker(props: {
+  label: string;
+  choice: OfferChoice;
+  onChoice: (choice: OfferChoice) => void;
+  custom: CustomOfferDraft;
+  onCustom: (draft: CustomOfferDraft) => void;
+}) {
+  const resolved = offerFromChoice(props.choice, props.custom);
+  return (
+    <div>
+      <ChoiceChips
+        label={props.label}
+        options={OFFER_CHOICES}
+        value={props.choice}
+        onChange={props.onChoice}
+      />
+      {props.choice === "Custom…" ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="inline-flex overflow-hidden rounded-full border border-[var(--c-border)]">
+            {(["percent", "dollar"] as const).map((unit) => (
+              <button
+                key={unit}
+                type="button"
+                onClick={() => props.onCustom({ ...props.custom, unit })}
+                aria-pressed={props.custom.unit === unit}
+                className={[
+                  "px-3 py-1.5 text-xs font-bold",
+                  props.custom.unit === unit
+                    ? "bg-[var(--c-brand)] text-white"
+                    : "bg-[var(--c-bg-card)] text-[var(--c-text-secondary)]",
+                ].join(" ")}
+              >
+                {unit === "percent" ? "% off" : "$ off"}
+              </button>
+            ))}
+          </div>
+          <input
+            type="number"
+            min={1}
+            max={props.custom.unit === "percent" ? MAX_CUSTOM_PERCENT : MAX_CUSTOM_DOLLARS}
+            inputMode="numeric"
+            placeholder={props.custom.unit === "percent" ? "e.g. 12" : "e.g. 20"}
+            value={props.custom.amount}
+            onChange={(e) => props.onCustom({ ...props.custom, amount: e.target.value })}
+            className="h-9 w-24 rounded-full border border-[var(--c-border)] bg-[var(--c-bg-card)] px-4 text-sm font-bold outline-none focus:border-[var(--c-border-focus)]"
+            aria-label={`Custom amount ${props.custom.unit === "percent" ? "percent" : "dollars"} off`}
+          />
+          <span className="text-[11px] text-[var(--c-text-muted)]">
+            up to {props.custom.unit === "percent" ? `${MAX_CUSTOM_PERCENT}%` : `$${MAX_CUSTOM_DOLLARS}`} —
+            deeper discounts tend to cheapen the wine
+          </span>
+        </div>
+      ) : null}
+      {resolved ? (
+        <p className="mt-2 text-xs leading-5 text-[var(--c-amber-text)]">
+          <strong>{offerLabel(resolved)}</strong> is a real discount in your store. It ends
+          automatically when the two-week test ends, and you can end it sooner any time.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /* ── Main component ────────────────────────────────────────────────────── */
 
 export function WineryAssistant() {
@@ -663,6 +748,7 @@ export function WineryAssistant() {
   const [confirming, setConfirming] = useState<Recommendation | null>(null);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [confirmOffer, setConfirmOffer] = useState<OfferChoice>("No offer");
+  const [confirmCustom, setConfirmCustom] = useState<CustomOfferDraft>({ unit: "percent", amount: "" });
   const [draftMessage, setDraftMessage] = useState("");
   const [justStartedId, setJustStartedId] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -672,6 +758,7 @@ export function WineryAssistant() {
   const [playPlacement, setPlayPlacement] = useState<PlayPlacement>("In the cart");
   const [playMessage, setPlayMessage] = useState("");
   const [playOffer, setPlayOffer] = useState<OfferChoice>("No offer");
+  const [playCustom, setPlayCustom] = useState<CustomOfferDraft>({ unit: "percent", amount: "" });
 
   useEffect(() => {
     try {
@@ -780,7 +867,7 @@ export function WineryAssistant() {
       baseline: numbersFrom(overview),
       status: "running",
       custom: { goal: playGoal, audience: playAudience, placement: playPlacement },
-      offer: offerFromChoice(playOffer),
+      offer: offerFromChoice(playOffer, playCustom),
     };
     setStrategies((current) => {
       const next = [strategy, ...current].slice(0, 10);
@@ -792,7 +879,7 @@ export function WineryAssistant() {
     setPlayOffer("No offer");
     setJustStartedId(strategy.id);
     setStep(3);
-  }, [overview, playAudience, playGoal, playMessage, playOffer, playPlacement]);
+  }, [overview, playAudience, playCustom, playGoal, playMessage, playOffer, playPlacement]);
 
   const setStrategyStatus = useCallback((id: string, status: "running" | "paused") => {
     setStrategies((current) => {
@@ -1340,20 +1427,13 @@ export function WineryAssistant() {
                 value={playPlacement}
                 onChange={setPlayPlacement}
               />
-              <div>
-                <ChoiceChips
-                  label="4 · Sweeten it with an offer? (optional)"
-                  options={OFFER_CHOICES}
-                  value={playOffer}
-                  onChange={setPlayOffer}
-                />
-                {playOffer !== "No offer" ? (
-                  <p className="mt-2 text-xs leading-5 text-[var(--c-amber-text)]">
-                    <strong>{playOffer}</strong> is a real discount in your store. It ends
-                    automatically when the two-week test ends, and you can end it sooner any time.
-                  </p>
-                ) : null}
-              </div>
+              <OfferPicker
+                label="4 · Sweeten it with an offer? (optional)"
+                choice={playOffer}
+                onChoice={setPlayOffer}
+                custom={playCustom}
+                onCustom={setPlayCustom}
+              />
 
               <div>
                 <label className="block">
@@ -1455,18 +1535,13 @@ export function WineryAssistant() {
             </ul>
 
             <div className="mt-4">
-              <ChoiceChips
+              <OfferPicker
                 label="Sweeten it with an offer?"
-                options={OFFER_CHOICES}
-                value={confirmOffer}
-                onChange={setConfirmOffer}
+                choice={confirmOffer}
+                onChoice={setConfirmOffer}
+                custom={confirmCustom}
+                onCustom={setConfirmCustom}
               />
-              {confirmOffer !== "No offer" ? (
-                <p className="mt-2 text-xs leading-5 text-[var(--c-amber-text)]">
-                  <strong>{confirmOffer}</strong> is a real discount in your store. It ends
-                  automatically when the two-week test ends, and you can end it sooner any time.
-                </p>
-              ) : null}
             </div>
 
             <p className="mt-4 rounded-xl bg-[var(--c-bg-subtle)] p-3 text-xs leading-5 text-[var(--c-text-secondary)]">
@@ -1480,7 +1555,7 @@ export function WineryAssistant() {
                   startStrategy(
                     confirming,
                     confirmMessage.trim() || confirming.defaultMessage,
-                    offerFromChoice(confirmOffer),
+                    offerFromChoice(confirmOffer, confirmCustom),
                   )
                 }
                 className="rounded-full bg-[var(--c-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--c-brand-hover)]"
