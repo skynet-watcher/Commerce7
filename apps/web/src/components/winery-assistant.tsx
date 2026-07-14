@@ -341,12 +341,12 @@ function buildCheckup(overview: Overview, live: boolean): CheckItem[] {
     },
     {
       id: "cart-messages",
-      label: "Cart messages",
+      label: "Cart carrots",
       status: carrot > 0 ? "good" : "notset",
       finding:
         carrot > 0
-          ? "At least one cart message is live and being seen."
-          : "No cart messages running yet.",
+          ? "At least one general content carrot is live and being seen."
+          : "No cart carrots running yet.",
       meaning:
         carrot > 0
           ? "The cart is where buying decisions happen — you are already talking to shoppers there."
@@ -354,12 +354,12 @@ function buildCheckup(overview: Overview, live: boolean): CheckItem[] {
     },
     {
       id: "recommendations",
-      label: "Personalized bottle suggestions",
+      label: "Product upsells",
       status: blocks > 0 ? "good" : "notset",
       finding:
         blocks > 0
-          ? "Product suggestions are showing to shoppers."
-          : "Not showing personalized suggestions yet.",
+          ? "Dynamic product upsells are showing to shoppers."
+          : "Not showing product upsells yet.",
       meaning:
         blocks > 0
           ? "Returning shoppers see wines matched to what they already enjoy."
@@ -482,12 +482,12 @@ const RECOMMENDATIONS: Recommendation[] = [
   {
     id: "sharpen-message",
     goal: "Tune what's running",
-    title: "Sharpen your current cart message",
+    title: "Sharpen your current cart carrot",
     tagline: "Small wording change, real difference",
-    why: "Your cart message is being seen, but fewer shoppers are clicking than we'd expect. Messages with a specific number (\"2 bottles away\") reliably beat vague ones (\"almost there\").",
+    why: "Your cart carrot is being seen, but fewer shoppers are clicking than we'd expect. Messages with a specific number (\"2 bottles away\") reliably beat vague ones (\"almost there\").",
     defaultMessage: "Add 2 more bottles and shipping is on us.",
     steps: [
-      "Replaces your current cart message wording",
+      "Replaces your current cart carrot wording",
       "We compare results before and after the change",
       "You can put the old wording back any time",
     ],

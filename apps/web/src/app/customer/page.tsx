@@ -12,7 +12,7 @@ const recommendation = {
   location: "Top of Side Cart",
   message: "Add 1 more bottle to receive free shipping on your order.",
   reason:
-    "The simplest useful first move is a cart message tied to an existing shipping promotion. It is easy for the winery to understand and easy for shoppers to act on.",
+    "The simplest useful first move is a cart carrot tied to an existing shipping promotion. It is easy for the winery to understand and easy for shoppers to act on.",
   conditions: ["Cart Item Count is at least 1", "Cart Item Count is 5 or fewer"],
 };
 
